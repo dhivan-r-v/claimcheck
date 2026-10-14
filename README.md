@@ -165,6 +165,15 @@ All settings are environment variables, set in `.env`:
 | `MODEL_VISION`, `MODEL_UNDERSTAND`, `MODEL_PLAN`, `MODEL_ASSESS`, `MODEL_VERDICT` | see `claimcheck/config.py` | Swap any stage's model |
 | `RATE_LIMIT_PER_HOUR` | `15` | Checks per client IP per hour (cached results are free) |
 
+## Deploy on Render (free)
+
+[`render.yaml`](render.yaml) is a Render Blueprint. In Render, choose **New → Blueprint**, select this repository,
+and paste `NEBIUS_API_KEY` and `TAVILY_API_KEY` when prompted. Render builds the Dockerfile and runs the free web
+service in Singapore. It redeploys automatically after CI passes on `main`.
+
+On the free plan the service sleeps after 15 minutes without traffic, so the first request after that takes
+30–60 s to wake it. All model inference still runs on Nebius Token Factory.
+
 ## Deploy on Nebius Serverless Endpoints
 
 Every push to `main` builds the container image and publishes it as

@@ -1,0 +1,16 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# New > Blueprint > pick this repo, then paste the two API keys when prompted.
+services:
+  - type: web
+    name: claimcheck
+    runtime: docker
+    plan: free
+    region: singapore          # closest Render region to India
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass   # redeploy on main only after CI passes
+    envVars:
+      - key: NEBIUS_API_KEY
+        sync: false            # secret: entered in the Render dashboard, never in git
+      - key: TAVILY_API_KEY
+        sync: false
