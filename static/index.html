@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ClaimCheck</title>
+  <meta name="description" content="Forward a suspicious message or screenshot. ClaimCheck checks it against official sources and tells you if it's a scam — in your language.">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="logo" aria-hidden="true">✓</span> ClaimCheck</div>
+    <p class="tag">Got a suspicious forward? Check it before you click, pay or share.</p>
+  </header>
+
+  <main>
+    <form id="form" class="card">
+      <label for="text" class="label">Paste the message</label>
+      <textarea id="text" name="text" rows="6" maxlength="4000"
+        placeholder="Paste a WhatsApp / SMS message here — any language, Hinglish or Tanglish is fine"></textarea>
+
+      <div class="row">
+        <label class="file">
+          <input id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp">
+          <span>📎 Add screenshot</span>
+        </label>
+        <span id="fileName" class="muted"></span>
+        <button id="submit" type="submit" class="primary">Check it</button>
+      </div>
+      <img id="preview" class="preview" alt="Screenshot preview" hidden>
+
+      <div class="examples">
+        <span class="muted">Try an example:</span>
+        <button type="button" data-ex="0">PM-Kisan ₹12,000 (Hinglish)</button>
+        <button type="button" data-ex="1">Electricity cut (Tamil)</button>
+        <button type="button" data-ex="2">SBI account block (Hindi)</button>
+        <button type="button" data-ex="3">PM-Kisan update (genuine)</button>
+      </div>
+    </form>
+
+    <section id="progress" class="card" hidden>
+      <h2>Checking…</h2>
+      <ol id="steps" class="steps"></ol>
+    </section>
+
+    <section id="result" hidden></section>
+  </main>
+
+  <footer>
+    Powered by NVIDIA Nemotron on Nebius Token Factory and Tavily search.
+    ClaimCheck doesn't store your messages. It can make mistakes — when in doubt, check the official website.
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
