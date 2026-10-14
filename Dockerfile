@@ -14,8 +14,10 @@ COPY static/ static/
 RUN useradd --create-home app
 USER app
 
+# Listens on $PORT when the host sets one (Render), otherwise 8000 (Nebius, local).
+ENV PORT=8000
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"
+HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import os, urllib.request; urllib.request.urlopen(f'http://127.0.0.1:{os.environ[\"PORT\"]}/api/health')"
 
 # Keys come from the environment (NEBIUS_API_KEY, TAVILY_API_KEY), never from the image.
-CMD ["uvicorn", "claimcheck.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["sh", "-c", "exec uvicorn claimcheck.app:app --host 0.0.0.0 --port \"$PORT\" --proxy-headers --forwarded-allow-ips '*'"]
