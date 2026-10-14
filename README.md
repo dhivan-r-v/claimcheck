@@ -165,6 +165,31 @@ All settings are environment variables, set in `.env`:
 | `MODEL_VISION`, `MODEL_UNDERSTAND`, `MODEL_PLAN`, `MODEL_ASSESS`, `MODEL_VERDICT` | see `claimcheck/config.py` | Swap any stage's model |
 | `RATE_LIMIT_PER_HOUR` | `15` | Checks per client IP per hour (cached results are free) |
 
+## Deploy on Nebius Serverless Endpoints
+
+Every push to `main` builds the container image and publishes it as
+`ghcr.io/dhivan-r-v/claimcheck:latest` ([image.yml](.github/workflows/image.yml)). To run it as a Nebius Serverless Endpoint:
+
+```bash
+nebius ai endpoint create \
+  --name claimcheck \
+  --image ghcr.io/dhivan-r-v/claimcheck:latest \
+  --platform cpu-d3 --preset 2vcpu-8gb --disk-size 32Gi \
+  --container-port 8000 \
+  --env-secret NEBIUS_API_KEY=claimcheck-keys \
+  --env-secret TAVILY_API_KEY=claimcheck-keys
+```
+
+The API keys come from a MysteryBox secret (`claimcheck-keys`, with keys `NEBIUS_API_KEY` and `TAVILY_API_KEY`) and are
+never baked into the image. The endpoint gets a managed `https://` URL. Stop it when you aren't using it
+(`nebius ai endpoint stop --id <ID>`): compute isn't billed while it's stopped.
+
+Run the same image locally:
+
+```bash
+docker run -p 8000:8000 --env-file .env ghcr.io/dhivan-r-v/claimcheck:latest
+```
+
 ## API
 
 `POST /api/check` takes a multipart form with `text` and/or `image` (PNG/JPEG/WebP, ≤ 5 MB). It returns a
