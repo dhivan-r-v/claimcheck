@@ -64,3 +64,23 @@ def test_guardrail_verified_needs_official_support():
 
 def test_deadline_in_hours():
     assert "urgency" in codes("Your refund will be cancelled in 24 hours.")
+
+
+def test_otp_requests_are_flagged():
+    for msg in [
+        "Enter your account number and OTP to receive the amount.",
+        "Just share your UAN number and the OTP you receive with our agent.",
+        "Turant OTP bhejo is number pe",
+        "कृपया अपना ओटीपी बताएं",
+    ]:
+        assert "asks_otp_pin" in codes(msg), msg
+
+
+def test_otp_warnings_are_not_flagged():
+    for msg in [
+        "RBI Kehta Hai: Never share your OTP, PIN, CVV or passwords with anyone.",
+        "Kisi ke saath bhi apna OTP share mat karo.",
+        "Do not share your UPI PIN with anyone.",
+        "अपना ओटीपी कभी किसी को न बताएं।",
+    ]:
+        assert "asks_otp_pin" not in codes(msg), msg

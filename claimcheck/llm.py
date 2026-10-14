@@ -38,7 +38,7 @@ class TokenFactory:
         *,
         think: bool = False,
         max_tokens: int = 1024,
-        temperature: float = 0.2,
+        temperature: float = 0.0,  # fact-checking should be repeatable
         timeout: float = 60,
     ) -> str:
         body = {

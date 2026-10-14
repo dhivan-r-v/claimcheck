@@ -9,6 +9,8 @@ load_dotenv(ROOT / ".env")
 NEBIUS_API_KEY = os.getenv("NEBIUS_API_KEY", "")
 NEBIUS_BASE_URL = os.getenv("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1/").rstrip("/")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
+_cache_dir = os.getenv("SEARCH_CACHE_DIR", "")
+SEARCH_CACHE_DIR = Path(_cache_dir) if _cache_dir else None
 
 # One model per job. Nemotron does all the reasoning; Qwen only transcribes screenshots
 # because no Nemotron model on Token Factory accepts image input.

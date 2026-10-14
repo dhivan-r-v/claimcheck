@@ -33,8 +33,6 @@ URL_RE = re.compile(
 
 PATTERNS = [
     # code, severity, label, regex
-    ("asks_otp_pin", "critical", "Asks for an OTP, PIN or password",
-     r"\botp\b|\bupi\s*pin\b|\bm-?pin\b|\bcvv\b|\bpassword\b|ओटीपी|पिन\s*(नंबर|बताएं|भेजें)"),
     ("apk_download", "critical", "Asks you to install an app file (.apk) outside the Play Store",
      r"\.apk\b|\bapk\s*(file|download)\b"),
     ("upfront_fee", "high", "Asks for a fee or payment to receive a benefit",
@@ -56,6 +54,24 @@ PATTERNS = [
      r"sab(ko|ke)\s*saath\s*share|फॉरवर्ड|शेयर\s*करें"),
 ]
 _COMPILED = [(c, s, l, re.compile(p, re.I)) for c, s, l, p in PATTERNS]
+
+# OTP/PIN: only a *request* counts. Awareness messages ("never share your OTP") must not trigger it.
+_SECRET = (r"(\botp\b|one[\s-]*time\s*password|\bupi\s*pin\b|\bm-?pin\b|\batm\s*pin\b|\bpin\s*number\b|"
+           r"\bcvv\b|\bpassword\b|ओटीपी|पिन)")
+_ASK = (r"(\bshare\b|\bsend\b|\btell\b|\benter\b|\bprovide\b|\bgive\b|\bforward\b|\btype\b|\bsubmit\b|"
+        r"\breply\s*with\b|\bbhej\w*|\bbata\w*|\bde\s*do\b|\bdijiye\b|भेज\w*|बता\w*|दें|डालें|பகிர\w*|அனுப்ப\w*)")
+_OTP_REQUEST = re.compile(rf"{_ASK}.{{0,40}}{_SECRET}|{_SECRET}.{{0,25}}{_ASK}", re.I)
+_NEGATION = re.compile(
+    r"\bnever\b|\bdon'?t\b|\bdo\s*not\b|\bnot\b|\bno\s*one\b|\bkabhi\b|\bmat\b|\bna\b|\bnahi\w*|"
+    r"कभी|मत|न\s|नहीं|ஒருபோதும்|வேண்டாம்|கூடாது", re.I)
+
+
+def _otp_request(text: str) -> str | None:
+    for m in _OTP_REQUEST.finditer(text):
+        context = text[max(0, m.start() - 40): m.end() + 20]
+        if not _NEGATION.search(context):
+            return m.group(0)
+    return None
 
 
 @dataclass
@@ -117,6 +133,9 @@ def analyse(text: str) -> dict:
     urls = find_urls(text)
     for u in urls:
         flags += check_url(u)
+    otp = _otp_request(text)
+    if otp:
+        flags.append(Flag("asks_otp_pin", "critical", "Asks for an OTP, PIN or password", otp.strip()[:80]))
     for code, sev, label, rx in _COMPILED:
         m = rx.search(text)
         if m:
