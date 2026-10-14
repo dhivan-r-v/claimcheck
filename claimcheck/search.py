@@ -1,4 +1,6 @@
 """Tavily search + extract, and helpers to turn results into numbered evidence."""
+import hashlib
+import json
 import re
 from urllib.parse import urlparse
 
@@ -10,6 +12,13 @@ TAVILY = "https://api.tavily.com"
 
 
 async def _post(client: httpx.AsyncClient, path: str, body: dict) -> dict:
+    # Optional disk cache (set SEARCH_CACHE_DIR) so evaluation reruns don't spend Tavily credits.
+    cache_file = None
+    if config.SEARCH_CACHE_DIR:
+        key = hashlib.sha256(json.dumps([path, body], sort_keys=True).encode()).hexdigest()
+        cache_file = config.SEARCH_CACHE_DIR / f"{key}.json"
+        if cache_file.exists():
+            return json.loads(cache_file.read_text(encoding="utf-8"))
     r = await client.post(
         f"{TAVILY}/{path}",
         json=body,
@@ -17,7 +26,11 @@ async def _post(client: httpx.AsyncClient, path: str, body: dict) -> dict:
         timeout=30,
     )
     r.raise_for_status()
-    return r.json()
+    data = r.json()
+    if cache_file:
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        cache_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    return data
 
 
 async def search(
@@ -51,6 +64,15 @@ async def extract(client: httpx.AsyncClient, urls: list[str]) -> dict[str, str]:
     except httpx.HTTPError:
         return {}
     return {r["url"]: r.get("raw_content") or "" for r in data.get("results", [])}
+
+
+_JUNK = ("javascript must be enabled", "enable javascript", "please enable cookies", "access denied")
+
+
+def is_junk(text: str | None) -> bool:
+    """Search results / pages with no usable content (JS walls, error pages)."""
+    t = (text or "").strip().lower()
+    return len(t) < 40 or (len(t) < 400 and any(j in t for j in _JUNK))
 
 
 def domain(url: str) -> str:

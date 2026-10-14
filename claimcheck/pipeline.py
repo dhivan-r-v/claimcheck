@@ -108,7 +108,7 @@ class Pipeline:
             for (cid, kind), hits in zip(kinds, results):
                 for h in hits:
                     url = h.get("url")
-                    if not url:
+                    if not url or search.is_junk(h.get("content")):
                         continue
                     if url not in seen:
                         host = search.domain(url)
@@ -123,8 +123,10 @@ class Pipeline:
             yield _event("search", "done", tool="Tavily Search", count=len(sources),
                          sources=[{k: s[k] for k in ("n", "url", "title", "domain", "kind")} for s in sources])
 
-            # 6. Read the top official page per claim in full
-            to_read = []
+            # 6. Read in full: official links in the message itself + the top official result per claim
+            linked = [u if u.lower().startswith("http") else f"https://{u}" for u in flags["official_urls"]]
+            linked = [u for u in linked if u not in seen][:2]
+            to_read = list(linked)
             for c in claims:
                 off = [s for s in sources if c["id"] in s["claims"] and s["kind"] == "official"]
                 if off and off[0]["url"] not in to_read:
@@ -132,11 +134,20 @@ class Pipeline:
             if to_read:
                 yield _event("read", "running", tool="Tavily Extract", urls=to_read)
                 pages = await search.extract(self.http, to_read)
+                all_kws = [k for c in claims for k in c.get("keywords", [])]
+                for u in linked:
+                    if not search.is_junk(pages.get(u)):
+                        sources.append({
+                            "n": len(sources) + 1, "url": u, "title": "Official link in the message",
+                            "domain": search.domain(u), "kind": "official", "snippet": "",
+                            "claims": [c["id"] for c in claims],
+                        })
                 for s in sources:
-                    if s["url"] in pages:
+                    if s["url"] in pages and not search.is_junk(pages[s["url"]]):
                         kws = [k for c in claims if c["id"] in s["claims"] for k in c.get("keywords", [])]
-                        s["page"] = search.relevant_passages(pages[s["url"]], kws)
-                yield _event("read", "done", tool="Tavily Extract", read=len(pages))
+                        s["page"] = search.relevant_passages(pages[s["url"]], kws or all_kws)
+                read = sum(1 for s in sources if s.get("page"))
+                yield _event("read", "done", tool="Tavily Extract", read=read)
 
             # 7. Weigh evidence per claim, in parallel
             yield _event("weigh", "running", model=M["assess"])

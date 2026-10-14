@@ -33,7 +33,24 @@ the official source to prove it, in the language they actually read.
 | "आपका SBI YONO खाता आज बंद हो जाएगा… sbi-yono-kyc.in" | **SCAM** | Hindi | Look-alike domain; India Today fact-checks |
 | Screenshot of an "income tax refund" SMS | **SCAM** | English | Read by the vision model; asks for OTP, `.top` link |
 
-A full check takes about 20–30 seconds, and the UI streams every stage as it happens.
+A full check takes about 15–20 seconds, and the UI streams every stage as it happens.
+
+## Accuracy
+
+On a labelled test set of **40 messages** (24 scams or false claims, 16 genuine; English, Hinglish, Hindi, Tamil, Tanglish):
+
+| | |
+|---|---|
+| **Scams called safe (marked VERIFIED)** | **0 of 24** |
+| Scams labelled SCAM | 24 of 24 (100%) |
+| Genuine messages wrongly called SCAM | 0 of 16 |
+| Genuine messages VERIFIED | 13 of 16 (81%). The other 3 came back UNVERIFIED, the cautious answer |
+| Overall accuracy | 92.5% |
+| Median time per check | 16 s |
+
+Full report, confusion matrix and every miss: [eval/RESULTS.md](eval/RESULTS.md). The first run scored 87.5%. It also found a
+real bug: the OTP rule flagged *warnings* like "never share your OTP" as scams. The rule now only fires on actual
+requests for an OTP.
 
 ## How it works
 
@@ -121,6 +138,14 @@ python scripts/try_pipeline.py "PM Kisan ki 21vi kist mein 12000 milenge, regist
 python scripts/try_pipeline.py --image samples/itr-refund-scam.png
 ```
 
+Run the accuracy evaluation over the 40-message test set (see [eval/RESULTS.md](eval/RESULTS.md)):
+
+```bash
+python eval/run_eval.py
+```
+
+Tavily responses are cached in `eval/.search_cache/`, so reruns only spend Token Factory credits.
+
 Run the tests (no API keys needed):
 
 ```bash
@@ -162,6 +187,7 @@ claimcheck/
   app.py         FastAPI: SSE streaming, caching, rate limiting
   config.py      models, limits, official & fact-check domains
 static/          web UI (vanilla HTML/CSS/JS, mobile-first, dark mode)
+eval/            40-message labelled test set, evaluation runner, results
 scripts/         setup check and CLI runner
 tests/           unit tests for red flags and guardrails
 samples/         sample screenshot for testing
@@ -169,7 +195,8 @@ samples/         sample screenshot for testing
 
 ## Roadmap
 
-- [ ] Evaluation set of real scam and genuine forwards, with accuracy and false-"safe" rate reported here
+- [x] Evaluation set of scam and genuine forwards, with accuracy and false-"safe" rate ([eval/RESULTS.md](eval/RESULTS.md))
+- [ ] Grow the evaluation set to 100+ real forwards, and cover advisories that make no single checkable claim
 - [ ] Deploy on Nebius Serverless Endpoints; run the evaluation as a Nebius Serverless Job
 - [ ] Telegram bot: forward a message, get a verdict
 - [ ] More languages for the red-flag rules (Bengali, Telugu, Marathi, Malayalam, Kannada)
