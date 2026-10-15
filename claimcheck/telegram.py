@@ -7,6 +7,7 @@ Telegram calls POST /telegram/webhook with a secret header; we acknowledge at on
 the check in a background task, editing one status message as the pipeline progresses.
 """
 import asyncio
+import hashlib
 import html
 import logging
 import secrets
@@ -49,8 +50,19 @@ _tasks: set[asyncio.Task] = set()
 _seen_updates: deque[int] = deque(maxlen=500)  # Telegram re-sends updates it thinks we missed
 
 
+# Outcome of the last setWebhook call, shown on /api/health (never includes secrets).
+webhook_status: dict = {"registered": False, "error": None}
+
+
 def enabled() -> bool:
     return bool(config.TELEGRAM_BOT_TOKEN)
+
+
+def _secret() -> str:
+    """Telegram only accepts [A-Za-z0-9_-] in secret tokens, so hash whatever secret we were given.
+    Falls back to the bot token so the webhook is always protected."""
+    seed = config.TELEGRAM_WEBHOOK_SECRET or config.TELEGRAM_BOT_TOKEN
+    return hashlib.sha256(f"claimcheck-webhook:{seed}".encode()).hexdigest() if seed else ""
 
 
 async def _call(client: httpx.AsyncClient, method: str, **params) -> dict:
@@ -66,14 +78,20 @@ async def _call(client: httpx.AsyncClient, method: str, **params) -> dict:
 
 
 async def register_webhook(client: httpx.AsyncClient) -> None:
-    if not (enabled() and config.PUBLIC_URL and config.TELEGRAM_WEBHOOK_SECRET):
+    if not enabled():
         return
-    await _call(
+    if not config.PUBLIC_URL:
+        webhook_status.update(registered=False, error="no PUBLIC_URL / RENDER_EXTERNAL_URL set")
+        log.warning("telegram webhook not registered: %s", webhook_status["error"])
+        return
+    res = await _call(
         client, "setWebhook",
         url=f"{config.PUBLIC_URL}/telegram/webhook",
-        secret_token=config.TELEGRAM_WEBHOOK_SECRET,
+        secret_token=_secret(),
         allowed_updates=["message"],
     )
+    webhook_status.update(registered=bool(res.get("ok")), error=None if res.get("ok") else res.get("description", "failed"))
+    log.info("telegram webhook registered=%s error=%s", webhook_status["registered"], webhook_status["error"])
     await _call(client, "setMyCommands", commands=[
         {"command": "check", "description": "Check a message (reply to it in groups)"},
         {"command": "help", "description": "How to use ClaimCheck"},
@@ -82,7 +100,7 @@ async def register_webhook(client: httpx.AsyncClient) -> None:
 
 @router.post("/telegram/webhook", include_in_schema=False)
 async def webhook(request: Request, x_telegram_bot_api_secret_token: str | None = Header(None)):
-    secret = config.TELEGRAM_WEBHOOK_SECRET
+    secret = _secret()
     if not (enabled() and secret and secrets.compare_digest(x_telegram_bot_api_secret_token or "", secret)):
         raise HTTPException(403)
     update = await request.json()

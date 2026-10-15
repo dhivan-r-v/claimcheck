@@ -110,3 +110,19 @@ def test_webhook_rejects_wrong_secret(bot):
         assert r.status_code == 403
         r = client.post("/telegram/webhook", json={"update_id": 1})
         assert r.status_code == 403
+
+
+def test_webhook_secret_is_telegram_safe(bot, monkeypatch):
+    import re
+    monkeypatch.setattr(config, "TELEGRAM_WEBHOOK_SECRET", "a+b/c=d==")  # Render-style generated value
+    assert re.fullmatch(r"[A-Za-z0-9_-]{1,256}", telegram._secret())
+
+
+def test_webhook_accepts_derived_secret(bot):
+    app = FastAPI()
+    app.include_router(telegram.router)
+    app.state.http, app.state.pipeline = None, FakePipeline()
+    with TestClient(app) as client:
+        r = client.post("/telegram/webhook", json={"update_id": 42},
+                        headers={"X-Telegram-Bot-Api-Secret-Token": telegram._secret()})
+        assert r.status_code == 200
