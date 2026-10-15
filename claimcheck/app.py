@@ -47,7 +47,8 @@ async def index():
 
 @app.get("/api/health")
 async def health():
-    return {"ok": True, "models": config.MODELS, "telegram": telegram.enabled()}
+    return {"ok": True, "models": config.MODELS, "telegram": telegram.enabled(),
+            "telegram_webhook": telegram.webhook_status if telegram.enabled() else None}
 
 
 @app.post("/api/check")
