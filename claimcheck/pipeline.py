@@ -3,6 +3,7 @@
 Stages
   read_image  Qwen3.8-27B (vision)    transcribe a screenshot
   understand  Nemotron 3.5 Lightning  language + checkable claims
+  fingerprint Nemotron 3 Super        manipulation tactics + quoted evidence (concurrent with understand)
   red_flags   deterministic           links and scam patterns (no model)
   plan        Nemotron 3 Nano         search queries per claim
   search      Tavily                  official / fact-check / news searches, in parallel
@@ -19,7 +20,7 @@ from collections.abc import AsyncIterator
 
 import httpx
 
-from . import config, prompts, redflags, search
+from . import config, fingerprint, prompts, redflags, search
 from .llm import LLMError, TokenFactory
 
 M = config.MODELS
@@ -61,15 +62,22 @@ class Pipeline:
             yield {"type": "error", "message": "No text found in the message or image."}
             return
 
-        # 2. Red flags are instant and model-free, so they show while the LLM reads the message.
+        # 2. Red flags are instant and model-free, so they show while the models read the message.
+        #    Understanding (claims) and the manipulation fingerprint (tactics) run concurrently.
         yield _event("understand", "running", model=M["understand"])
+        yield _event("fingerprint", "running", model=M["fingerprint"])
         flags = redflags.analyse(text)
         yield _event("red_flags", "done", flags=flags["flags"], urls=flags["urls"])
-        info = await self.llm.chat_json(M["understand"], prompts.UNDERSTAND, text, max_tokens=1200)
+        info, fp_raw = await asyncio.gather(
+            self.llm.chat_json(M["understand"], prompts.UNDERSTAND, text, max_tokens=1200),
+            self._fingerprint(text),
+        )
         claims = (info.get("claims") or [])[: config.MAX_CLAIMS]
         for i, c in enumerate(claims, 1):
             c.setdefault("id", f"c{i}")
         yield _event("understand", "done", model=M["understand"], info={**info, "claims": claims})
+        fp = fingerprint.build(fp_raw, flags["flags"])
+        yield _event("fingerprint", "done", model=M["fingerprint"], fingerprint=fp)
 
         sources: list[dict] = []
         assessments: list[dict] = []
@@ -156,8 +164,8 @@ class Pipeline:
 
         # 8. Verdict
         yield _event("verdict", "running", model=M["verdict"])
-        verdict, used = await self._verdict(text, info, claims, assessments, sources, flags)
-        verdict = apply_guardrails(verdict, flags, assessments, sources)
+        verdict, used = await self._verdict(text, info, claims, assessments, sources, flags, fp)
+        verdict = apply_guardrails(verdict, flags, assessments, sources, fp)
         yield _event("verdict", "done", model=used)
 
         yield {
@@ -168,10 +176,17 @@ class Pipeline:
             "claims": claims,
             "assessments": assessments,
             "red_flags": flags,
+            "fingerprint": fp,
             "sources": [{k: s[k] for k in ("n", "url", "title", "domain", "kind")} for s in sources],
             "models": {**M, "verdict_used": used},
             "seconds": round(time.monotonic() - t0, 1),
         }
+
+    async def _fingerprint(self, text: str) -> dict | None:
+        try:
+            return await self.llm.chat_json(M["fingerprint"], prompts.FINGERPRINT, text, max_tokens=1500)
+        except (LLMError, ValueError):
+            return None  # rules alone still populate the fingerprint
 
     async def _assess(self, claim: dict, sources: list[dict]) -> dict:
         mine = [s for s in sources if claim["id"] in s["claims"]]
@@ -194,7 +209,7 @@ class Pipeline:
         out["stances"] = [s for s in out.get("stances", []) if s.get("n") in valid]
         return out
 
-    async def _verdict(self, text, info, claims, assessments, sources, flags) -> tuple[dict, str]:
+    async def _verdict(self, text, info, claims, assessments, sources, flags, fp) -> tuple[dict, str]:
         stance_by_n = {
             st["n"]: st for a in assessments for st in a.get("stances", []) if st.get("stance") != "neutral"
         }
@@ -210,6 +225,12 @@ class Pipeline:
                 for s in sources
             ],
             "red_flags": flags["flags"],
+            "manipulation_fingerprint": {
+                "level": fp["level"], "score": fp["score"], "impersonates": fp["impersonates"],
+                "tactics": {k: {"score": t["score"], "evidence": t["evidence"]}
+                            for k, t in fp["tactics"].items() if t["score"]},
+                "legit_signals": fp["legit_signals"],
+            },
         }
         system = prompts.VERDICT.format(reply_language=info.get("reply_language", "English"))
         user = json.dumps(payload, ensure_ascii=False)
@@ -221,7 +242,8 @@ class Pipeline:
                                             max_tokens=6000, timeout=120), M["verdict_fallback"]
 
 
-def apply_guardrails(verdict: dict, flags: dict, assessments: list[dict], sources: list[dict]) -> dict:
+def apply_guardrails(verdict: dict, flags: dict, assessments: list[dict], sources: list[dict],
+                     fp: dict | None = None) -> dict:
     """Hard rules the model cannot override."""
     v = str(verdict.get("verdict", "UNVERIFIED")).upper()
     if v not in {"SCAM", "VERIFIED", "UNVERIFIED"}:
@@ -234,6 +256,11 @@ def apply_guardrails(verdict: dict, flags: dict, assessments: list[dict], source
     notes = []
     if flags["critical"] and v != "SCAM":
         notes.append(f"Changed from {v} to SCAM: the message contains critical scam signals.")
+        v = "SCAM"
+    elif fp and fp["level"] == "high" and v != "SCAM" and not official_support:
+        tactics = ", ".join(fp["tactics"][k]["label"].lower() for k in fp["active"][:3])
+        notes.append(f"Changed from {v} to SCAM: strong manipulation pattern ({tactics}) "
+                     "and no official source backs the message.")
         v = "SCAM"
     elif v == "VERIFIED" and not official_support:
         notes.append("Changed from VERIFIED to UNVERIFIED: no official source confirmed the claim.")

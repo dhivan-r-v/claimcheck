@@ -1,0 +1,22 @@
+name: Keep demo awake
+
+# Render's free plan sleeps after 15 minutes idle, and waking takes 30-60 s. During the
+# judging window (Dec 1-15) ping the demo every 10 minutes so judges never hit a cold start.
+# Runs only on those days; 750 free instance hours/month covers 24/7 for one service.
+on:
+  schedule:
+    - cron: "*/10 * 1-15 12 *"
+  workflow_dispatch:   # run by hand, e.g. before recording the demo video
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping /api/health
+        run: |
+          for i in 1 2 3; do
+            curl -fsS --max-time 90 https://claimcheck-1znl.onrender.com/api/health && exit 0
+            sleep 10
+          done
+          exit 1

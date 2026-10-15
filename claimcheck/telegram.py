@@ -28,6 +28,7 @@ API = "https://api.telegram.org"
 STAGES = {
     "read_image": "Reading the screenshot",
     "understand": "Understanding the message",
+    "fingerprint": "Analysing manipulation tactics",
     "plan": "Planning the searches",
     "search": "Searching official sites & fact-checkers",
     "read": "Reading official pages",
@@ -245,9 +246,19 @@ def format_result(ev: dict) -> str:
     if local and english and local != english:
         lines += ["", f"<i>{e(english)}</i>"]
 
-    flags = ev.get("red_flags", {}).get("flags", [])[:3]
-    if flags:
-        lines += ["", "<b>Warning signs</b>"] + [f"• {e(f['label'])}" for f in flags]
+    fp = ev.get("fingerprint")
+    if fp and fp.get("active"):
+        lines += ["", f"<b>Manipulation: {e(fp['level'].upper())} ({fp['score']}/100)</b>"]
+        if fp.get("impersonates"):
+            lines.append(f"Pretends to be: {e(fp['impersonates'][:80])}")
+        for k in fp["active"][:4]:
+            t = fp["tactics"][k]
+            quote = f" — <i>“{e(t['evidence'][:80])}”</i>" if t.get("evidence") else ""
+            lines.append(f"• {e(t['label'])}{quote}")
+    else:
+        flags = ev.get("red_flags", {}).get("flags", [])[:3]
+        if flags:
+            lines += ["", "<b>Warning signs</b>"] + [f"• {e(f['label'])}" for f in flags]
 
     decisive = {
         st["n"] for a in ev.get("assessments", []) for st in a.get("stances", [])

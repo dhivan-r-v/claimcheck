@@ -8,6 +8,7 @@ const EXAMPLES = [
 const STAGES = {
   read_image: "Reading the screenshot",
   understand: "Understanding the message",
+  fingerprint: "Analysing manipulation tactics",
   red_flags: "Checking links and scam patterns",
   plan: "Planning the searches",
   search: "Searching official sites, fact-checkers and news",
@@ -118,6 +119,9 @@ function step(ev) {
   let detail = "";
   if (ev.stage === "red_flags") detail = ev.flags.length ? `${ev.flags.length} warning sign(s) found` : "No warning signs in links or wording";
   if (ev.stage === "understand" && ev.info) detail = `${ev.info.reply_language} · ${ev.info.claims.length} claim(s) to check`;
+  if (ev.stage === "fingerprint" && ev.fingerprint)
+    detail = `${ev.fingerprint.level} manipulation (${ev.fingerprint.score}/100)` +
+      (ev.fingerprint.active.length ? ` · ${ev.fingerprint.active.length} tactic(s)` : "");
   if (ev.stage === "search" && ev.status === "done") detail = `${ev.count} sources found`;
   if (ev.stage === "read" && ev.status === "done")
     detail = ev.read ? `${ev.read} official page(s) read in full` : "Official pages blocked full reading — using search excerpts";
@@ -159,15 +163,77 @@ function render(r) {
       <p class="reply">${esc(v.reply_local)}</p>
       ${v.reply_local !== v.explanation_en ? `<p class="en">${esc(v.explanation_en)}</p>` : ""}
       ${(v.guardrail_notes || []).map((n) => `<p class="meta">🛡 ${esc(n)}</p>`).join("")}
+      <div class="share">
+        <a id="shareWa" class="wa" target="_blank" rel="noopener">Share on WhatsApp</a>
+        <button id="shareCopy" type="button">Copy / share</button>
+        <span class="muted">Send the answer back to the group it came from.</span>
+      </div>
     </div>
-    ${flags ? `<div class="card"><h2>Warning signs</h2><ul class="flags">${flags}</ul></div>` : ""}
+    ${fingerprintCard(r.fingerprint)}
+    ${flags ? `<div class="card"><h2>Warning signs in links and wording</h2><ul class="flags">${flags}</ul></div>` : ""}
     ${claims ? `<div class="card"><h2>Claims checked</h2><ul class="claims">${claims}</ul></div>` : ""}
     ${(v.advice_en || []).length ? `<div class="card"><h2>What to do</h2><ul class="advice">${v.advice_en.map((a) => `<li>• ${esc(a)}</li>`).join("")}</ul></div>` : ""}
     ${r.sources.length ? `<div class="card"><h2>Evidence</h2><ul class="sources">${key.map(srcItem).join("")}</ul>
       ${rest.length ? `<details><summary class="muted">${rest.length} more sources searched</summary><ul class="sources">${rest.map(srcItem).join("")}</ul></details>` : ""}</div>` : ""}
     <p class="meta">Verdict by ${esc(shortModel(r.models.verdict_used))} · evidence weighed by ${esc(shortModel(r.models.assess))} · on Nebius Token Factory</p>`;
+  wireShare(r);
   $("result").hidden = false;
   $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function fingerprintCard(fp) {
+  if (!fp) return "";
+  const rows = fp.active.map((k) => {
+    const t = fp.tactics[k];
+    return `<li class="tactic">
+      <div class="tactic-head"><span>${esc(t.label)}</span>
+        <span class="by">${t.found_by.map((b) => `<span class="chip">${esc(b)}</span>`).join("")}</span></div>
+      <div class="bar" role="img" aria-label="${t.score} of 3"><span style="width:${(t.score / 3) * 100}%"></span></div>
+      ${t.evidence ? `<span class="quote">“${esc(defang(t.evidence))}”</span>` : ""}</li>`;
+  }).join("");
+  return `<div class="card fp ${esc(fp.level)}">
+    <h2>Manipulation fingerprint <span class="level">${esc(fp.level)} · ${fp.score}/100</span></h2>
+    <p class="muted">How the message tries to make you act, separate from whether its claims are true.
+      This catches brand-new scams that have no search history yet.</p>
+    ${fp.impersonates ? `<p><strong>Pretends to be:</strong> ${esc(fp.impersonates)}</p>` : ""}
+    ${rows ? `<ul class="tactics">${rows}</ul>` : `<p>No manipulation tactics found.</p>`}
+    ${fp.summary_en ? `<p class="muted">${esc(fp.summary_en)}</p>` : ""}
+  </div>`;
+}
+
+// Same rule as the Telegram bot: official links stay, any other link is made untappable.
+const OFFICIAL = /(\.gov\.in|\.nic\.in|\.gov|^rbi\.org\.in|^npci\.org\.in|^irctc\.co\.in|^sbi\.co\.in|^mygov\.in)$/i;
+function defang(text) {
+  return String(text || "").replace(/\b(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?/gi, (url) => {
+    const host = url.replace(/^https?:\/\//i, "").split("/")[0].replace(/^www\./i, "");
+    if (OFFICIAL.test(host)) return url;
+    return url.replace(/^http/i, "hxxp").replace(/\./g, "[.]");
+  });
+}
+
+function shareText(r) {
+  const v = r.verdict;
+  const icon = { SCAM: "🚫", VERIFIED: "✅", UNVERIFIED: "⚠️" }[v.verdict] || "⚠️";
+  const official = r.sources.find((s) => s.kind === "official") || r.sources.find((s) => s.kind === "factcheck");
+  return [
+    `${icon} ClaimCheck: ${v.verdict} — ${defang(v.headline_en)}`,
+    "",
+    defang(v.reply_local || v.explanation_en),
+    official ? `\nSource: ${official.url}` : "",
+    `\nCheck any forward before you share: ${location.origin}`,
+  ].join("\n").trim();
+}
+
+function wireShare(r) {
+  const text = shareText(r);
+  $("shareWa").href = "https://wa.me/?text=" + encodeURIComponent(text);
+  $("shareCopy").onclick = async () => {
+    try {
+      if (navigator.share) await navigator.share({ text });
+      else await navigator.clipboard.writeText(text);
+      $("shareCopy").textContent = navigator.share ? "Shared" : "Copied ✓";
+    } catch { /* user cancelled */ }
+  };
 }
 
 function showError(msg) {

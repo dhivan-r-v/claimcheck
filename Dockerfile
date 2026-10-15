@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.13-slim AS app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -21,3 +21,12 @@ HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import os, urllib.request
 
 # Keys come from the environment (NEBIUS_API_KEY, TAVILY_API_KEY), never from the image.
 CMD ["sh", "-c", "exec uvicorn claimcheck.app:app --host 0.0.0.0 --port \"$PORT\" --proxy-headers --forwarded-allow-ips '*'"]
+
+# --- Evaluation job image (ghcr.io/dhivan-r-v/claimcheck:eval) -------------------------------
+# Runs the labelled test set as a Nebius Serverless Job and prints the report to the job logs.
+FROM app AS eval
+COPY --chown=app:app eval/ eval/
+COPY --chown=app:app samples/ samples/
+HEALTHCHECK NONE
+ENTRYPOINT ["python", "eval/run_eval.py"]
+CMD ["--category", "zero_day"]

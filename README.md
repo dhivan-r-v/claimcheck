@@ -208,6 +208,20 @@ The API keys come from a MysteryBox secret (`claimcheck-keys`, with keys `NEBIUS
 never baked into the image. The endpoint gets a managed `https://` URL. Stop it when you aren't using it
 (`nebius ai endpoint stop --id <ID>`): compute isn't billed while it's stopped.
 
+### Run the evaluation as a Nebius Serverless Job
+
+`ghcr.io/dhivan-r-v/claimcheck:eval` runs the labelled test set and prints the report to the job logs. By default
+it runs the zero-day scams; pass `--args` for other subsets. From the Nebius console's Cloud Shell:
+
+```bash
+nebius ai job create \
+  --name claimcheck-eval \
+  --image ghcr.io/dhivan-r-v/claimcheck:eval \
+  --platform cpu-d3 --preset 2vcpu-8gb --disk-size 32Gi --timeout 1h \
+  --env-secret NEBIUS_API_KEY=claimcheck-keys \
+  --env-secret TAVILY_API_KEY=claimcheck-keys
+```
+
 Run the same image locally:
 
 ```bash

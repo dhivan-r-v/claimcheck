@@ -55,6 +55,9 @@ async def run_one(pipe: Pipeline, item: dict, sem: asyncio.Semaphore) -> dict:
                         n_claims=len(ev["claims"]),
                         n_sources=len(ev["sources"]),
                         verdict_model=ev["models"]["verdict_used"],
+                        fp_level=ev["fingerprint"]["level"],
+                        fp_score=ev["fingerprint"]["score"],
+                        fp_tactics=ev["fingerprint"]["active"],
                     )
                 elif ev["type"] == "error":
                     out["error"] = ev["message"]
@@ -77,7 +80,14 @@ def metrics(rows: list[dict]) -> dict:
     def pct(a, b):
         return round(100 * a / b, 1) if b else None
 
+    zero_day = [r for r in scams if r["category"] == "zero_day"]
+    fp_flagged = lambda r: r.get("fp_level") in ("high", "medium")  # noqa: E731
     return {
+        "zero_day_caught": f"{sum(r['predicted'] == 'SCAM' for r in zero_day)}/{len(zero_day)}",
+        # The fingerprint alone, with no search at all, used as a classifier.
+        "fp_scams_flagged": pct(sum(fp_flagged(r) for r in scams), len(scams)),
+        "fp_genuine_flagged": f"{sum(fp_flagged(r) for r in genuine)}/{len(genuine)}",
+        "fp_genuine_high": sum(r.get("fp_level") == "high" for r in genuine),
         "n": len(rows),
         "errors": len(rows) - len(done),
         "accuracy": pct(sum(r["predicted"] == r["expected"] for r in done), len(done)),
@@ -116,6 +126,9 @@ def write_report(m: dict, rows: list[dict], stamp: str) -> str:
         f"| Genuine messages VERIFIED | {m['genuine_verified']}% |",
         f"| Genuine messages wrongly called SCAM | {m['genuine_marked_scam']} of {m['n_genuine']} |",
         f"| Exact-label accuracy | {m['accuracy']}% |",
+        f"| **Zero-day scams caught** (invented, no search history) | **{m['zero_day_caught']}** |",
+        f"| Fingerprint alone (no search): scams flagged medium/high | {m['fp_scams_flagged']}% |",
+        f"| Fingerprint alone: genuine messages flagged medium/high | {m['fp_genuine_flagged']} |",
         f"| Median / p90 time per check | {m['latency_median']}s / {m['latency_p90']}s |",
         f"| Runs that errored | {m['errors']} |",
         "",
@@ -129,9 +142,10 @@ def write_report(m: dict, rows: list[dict], stamp: str) -> str:
         "",
         "## Misses",
         "",
-        "| id | lang | expected | got | headline |",
-        "|---|---|---|---|---|",
+        "| id | lang | expected | got | fingerprint | headline |",
+        "|---|---|---|---|---|---|",
         *[f"| {r['id']} | {r['lang']} | {r['expected']} | {r['predicted'] or 'error'} | "
+          f"{r.get('fp_level', '-')} {r.get('fp_score', '')} | "
           f"{(r.get('headline') or r.get('error') or '').replace('|', '/')} |"
           for r in rows if r["predicted"] != r["expected"]],
     ]
@@ -142,6 +156,8 @@ async def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ids", help="comma-separated item ids")
     ap.add_argument("--limit", type=int)
+    ap.add_argument("--category", help="only items of this category, e.g. zero_day")
+    ap.add_argument("--print-report", action="store_true", help="print the markdown report (for job logs)")
     ap.add_argument("--concurrency", type=int, default=3)
     args = ap.parse_args()
 
@@ -149,6 +165,8 @@ async def main():
     if args.ids:
         wanted = set(args.ids.split(","))
         items = [i for i in items if i["id"] in wanted]
+    if args.category:
+        items = [i for i in items if i["category"] == args.category]
     if args.limit:
         items = items[: args.limit]
 
@@ -167,7 +185,10 @@ async def main():
         json.dumps({"metrics": m, "models": config.MODELS, "rows": rows}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    if not args.ids and not args.limit:
+    if args.print_report or os.getenv("NEBIUS_JOB") or args.category:
+        print("
+" + write_report(m, rows, stamp))
+    if not args.ids and not args.limit and not args.category:
         (EVAL / "RESULTS.md").write_text(write_report(m, rows, stamp), encoding="utf-8")
         print("wrote eval/RESULTS.md")
 
