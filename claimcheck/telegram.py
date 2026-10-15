@@ -10,13 +10,14 @@ import asyncio
 import hashlib
 import html
 import logging
+import re
 import secrets
 from collections import deque
 
 import httpx
 from fastapi import APIRouter, Header, HTTPException, Request
 
-from . import config
+from . import config, redflags, search
 from .llm import LLMError
 from .store import cache_key, limiter, results
 
@@ -220,10 +221,23 @@ async def _download_photo(client: httpx.AsyncClient, msg: dict) -> bytes | None:
     return r.content
 
 
+def defang(text: str) -> str:
+    """Make non-official links untappable (hxxp://pw5[.]in). Telegram auto-links any URL in a
+    message, and a scam warning must never hand the reader a working scam link."""
+    for url in redflags.find_urls(text):
+        if search.is_official(redflags._host(url)):
+            continue
+        safe = re.sub(r"^http", "hxxp", url, flags=re.I).replace(".", "[.]")
+        text = text.replace(url, safe)
+    return text
+
+
 def format_result(ev: dict) -> str:
     """The verdict as a Telegram HTML message (<= 4096 chars)."""
     v = ev["verdict"]
-    e = html.escape
+
+    def e(s: str) -> str:
+        return html.escape(defang(s))
     lines = [BADGE.get(v.get("verdict"), BADGE["UNVERIFIED"]), f"<b>{e(v.get('headline_en') or '')}</b>", ""]
     # Clip before escaping so the 4096-char limit is never hit mid-tag.
     local, english = (v.get("reply_local") or "")[:1500], (v.get("explanation_en") or "")[:1200]
@@ -244,7 +258,9 @@ def format_result(ev: dict) -> str:
     sources.sort(key=lambda s: (s["kind"] != "official", s["kind"] != "factcheck", s["n"]))
     if sources:
         lines += ["", "<b>Sources</b>"] + [
-            f"[{s['n']}] <a href=\"{e(s['url'], quote=True)}\">{e(s['domain'])}</a>" for s in sources[:4]
+            # Source links are our own search results, so they stay tappable.
+            f"[{s['n']}] <a href=\"{html.escape(s['url'], quote=True)}\">{html.escape(s['domain'])}</a>"
+            for s in sources[:4]
         ]
 
     advice = (v.get("advice_en") or [])[:2]
@@ -253,7 +269,7 @@ def format_result(ev: dict) -> str:
 
     footer = "Checked with NVIDIA Nemotron on Nebius Token Factory + Tavily"
     if config.PUBLIC_URL:
-        footer += f' · <a href="{e(config.PUBLIC_URL, quote=True)}">ClaimCheck</a>'
+        footer += f' · <a href="{html.escape(config.PUBLIC_URL, quote=True)}">ClaimCheck</a>'
     lines += ["", f"<i>{footer}</i>"]
 
     text = "\n".join(lines)
