@@ -126,3 +126,17 @@ def test_webhook_accepts_derived_secret(bot):
         r = client.post("/telegram/webhook", json={"update_id": 42},
                         headers={"X-Telegram-Bot-Api-Secret-Token": telegram._secret()})
         assert r.status_code == 200
+
+
+def test_scam_links_are_defanged_but_official_links_kept():
+    out = telegram.defang("Don't open http://pw5.in or pmkisan-gov.in.apply-now.xyz/reg; use https://pmkisan.gov.in")
+    assert "hxxp://pw5[.]in" in out
+    assert "pmkisan-gov[.]in[.]apply-now[.]xyz/reg" in out
+    assert "https://pmkisan.gov.in" in out
+
+
+def test_format_result_defangs_text_but_not_source_links():
+    ev = {**RESULT, "verdict": {**RESULT["verdict"], "explanation_en": "The link http://pw5.in is fake [1]."}}
+    out = telegram.format_result(ev)
+    assert "hxxp://pw5[.]in" in out and "http://pw5.in" not in out
+    assert 'href="https://pib.gov.in/a?x=1&amp;y=2"' in out
