@@ -116,11 +116,13 @@ class Pipeline:
             results = await asyncio.gather(*jobs)
 
             seen: dict[str, dict] = {}
+            alias: dict[str, str] = {}  # same article under another URL -> first URL seen
             for (cid, kind), hits in zip(kinds, results):
                 for h in hits:
                     url = h.get("url")
                     if not url or search.is_junk(h.get("content")):
                         continue
+                    url = alias.setdefault(search.article_key(url, h.get("title", "")), url)
                     if url not in seen:
                         host = search.domain(url)
                         seen[url] = {

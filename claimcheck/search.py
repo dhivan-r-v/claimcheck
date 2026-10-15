@@ -75,6 +75,17 @@ def is_junk(text: str | None) -> bool:
     return len(t) < 40 or (len(t) < 400 and any(j in t for j in _JUNK))
 
 
+def article_key(url: str, title: str) -> str:
+    """Identify one article across URL variants (AMP, tracking params, trailing slashes, mirrors)."""
+    norm_title = re.sub(r"\W+", " ", (title or "").lower()).strip()
+    if len(norm_title) >= 20:
+        return f"{domain(url)}|{norm_title}"
+    u = urlparse(url)
+    # Keep the query (PIB releases differ only by ?PRID=...) but drop tracking parameters.
+    query = "&".join(sorted(p for p in u.query.split("&") if p and not p.lower().startswith(("utm_", "fbclid", "gclid"))))
+    return f"{domain(url)}{u.path.rstrip('/').removesuffix('/amp')}?{query}"
+
+
 def domain(url: str) -> str:
     host = urlparse(url).hostname or ""
     return host.removeprefix("www.")

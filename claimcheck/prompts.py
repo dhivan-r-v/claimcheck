@@ -87,6 +87,9 @@ Decide the overall verdict:
 
 Cite only numbered sources like [1] or [2, 3]. Never mention internal names such as "red_flags",
 "manipulation_fingerprint" or "assessments"; describe the tactic itself instead ("it asks for a fee").
+Claim status: "false" ONLY when a source contradicts the claim; "true" ONLY when a source confirms it;
+"unverified" when nothing confirms or contradicts it (absence of evidence is not proof of falsehood, even if the
+overall message is a SCAM because of how it manipulates).
 Write for an ordinary person, not an expert. Be specific: name the scheme, the real amount/terms, the official site.
 "reply_local" must be written in: {reply_language}. Keep it short (2-4 sentences), warm and clear.
 Return ONLY JSON:
