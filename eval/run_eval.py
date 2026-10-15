@@ -58,6 +58,7 @@ async def run_one(pipe: Pipeline, item: dict, sem: asyncio.Semaphore) -> dict:
                         fp_level=ev["fingerprint"]["level"],
                         fp_score=ev["fingerprint"]["score"],
                         fp_tactics=ev["fingerprint"]["active"],
+                        fp_scores={k: t["score"] for k, t in ev["fingerprint"]["tactics"].items() if t["score"]},
                     )
                 elif ev["type"] == "error":
                     out["error"] = ev["message"]
@@ -186,8 +187,8 @@ async def main():
         encoding="utf-8",
     )
     if args.print_report or os.getenv("NEBIUS_JOB") or args.category:
-        print("
-" + write_report(m, rows, stamp))
+        print()
+        print(write_report(m, rows, stamp))
     if not args.ids and not args.limit and not args.category:
         (EVAL / "RESULTS.md").write_text(write_report(m, rows, stamp), encoding="utf-8")
         print("wrote eval/RESULTS.md")

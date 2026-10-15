@@ -22,6 +22,8 @@ TACTICS = {
 ASKS = ("credential_request", "payment_request", "off_channel")
 # Hooks that get the victim to comply.
 HOOKS = ("authority", "reward", "fear")
+# Pressure that stops the victim from thinking or checking.
+PRESSURE = ("fear", "secrecy", "urgency", "forward_pressure")
 
 # Deterministic red flag -> (tactic, minimum score)
 RULE_FLOORS = {
@@ -65,9 +67,11 @@ def build(model_out: dict | None, flags: list[dict]) -> dict:
     raw = sum(TACTICS[k][1] * t["score"] for k, t in tactics.items())
     asks = max(tactics[k]["score"] for k in ASKS)
     hooks = max(tactics[k]["score"] for k in HOOKS)
+    pressure = max(tactics[k]["score"] for k in PRESSURE)
     if (asks >= 2 and hooks >= 2) or raw >= 12:
         level = "high"
-    elif raw >= 6 or asks >= 2:
+    elif asks >= 2 or (pressure >= 2 and (hooks >= 2 or asks >= 1)):
+        # Authority + reward alone is just what a genuine scheme announcement looks like.
         level = "medium"
     else:
         level = "low"
