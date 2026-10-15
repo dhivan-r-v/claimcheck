@@ -15,4 +15,6 @@ jobs:
           python-version: "3.14"
           cache: pip
       - run: pip install -r requirements.txt pytest
+      # Scripts the tests don't import (eval runner, CLI tools) must at least compile.
+      - run: python -m compileall -q claimcheck eval scripts tests
       - run: python -m pytest -q

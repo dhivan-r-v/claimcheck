@@ -8,9 +8,10 @@ screenshot, in any language, including Hinglish and Tanglish, and ClaimCheck:
 
 1. reads it (screenshots included) and pulls out the claims that can be checked,
 2. inspects every link and phrase for scam patterns,
-3. searches **official `.gov.in` sources, Indian fact-checkers and news** with Tavily,
-4. weighs each source against each claim with NVIDIA Nemotron,
-5. returns **SCAM / VERIFIED / UNVERIFIED** with citations, written **in the sender's own language**.
+3. fingerprints the **manipulation tactics** it uses, which catches brand-new scams that have no search history yet,
+4. searches **official `.gov.in` sources, Indian fact-checkers and news** with Tavily,
+5. weighs each source against each claim with NVIDIA Nemotron,
+6. returns **SCAM / VERIFIED / UNVERIFIED** with citations, written **in the sender's own language**.
 
 **Live demo: https://claimcheck-1znl.onrender.com**. It's hosted on Render's free plan, so the first visit after a quiet
 spell can take up to a minute while it wakes up.
@@ -26,6 +27,21 @@ text that English-only tools miss. The scams copy real schemes (PM-Kisan, income
 and use links that *look* official (`pmkisan-gov.in.apply-now.xyz`). People need an answer they can trust, with
 the official source to prove it, in the language they actually read.
 
+## Two layers: facts and manipulation
+
+Fact-checking alone has a blind spot: a scam invented **today** has no fact-check, no news and no search history.
+But scammers' tactics never change. They borrow authority, dangle money, create panic, rush you, then ask for an OTP, a
+fee or a tap on a link. So ClaimCheck checks every message in two independent ways:
+
+| Layer | Question | How |
+|---|---|---|
+| **Evidence** | *Are the claims true?* | Tavily searches official `.gov.in` sites, Indian fact-checkers and news; Nemotron weighs each source |
+| **Manipulation fingerprint** | *How is it trying to make me act?* | Nemotron 3 Super scores 9 tactics (urgency, borrowed authority, fear, reward bait, credential request, payment request, secrecy, forward pressure, off-channel) with **quoted evidence in the original language**; the rule engine corroborates |
+
+The fingerprint ignores facts entirely, so it still works on a scheme nobody has heard of. A strong scam playbook
+with no official backing is a SCAM, whatever the search finds or doesn't find. Genuine announcements, which use
+authority and benefits but ask for nothing and apply no pressure, score *low*.
+
 ## Example results
 
 | Message | Verdict | Reply in | Deciding evidence |
@@ -40,20 +56,30 @@ A full check takes about 15–20 seconds, and the UI streams every stage as it h
 
 ## Accuracy
 
-On a labelled test set of **40 messages** (24 scams or false claims, 16 genuine; English, Hinglish, Hindi, Tamil, Tanglish):
+On a labelled test set of **50 messages** in English, Hinglish, Hindi, Tamil and Tanglish: 24 known scam
+patterns and false claims, **8 zero-day scams** (invented schemes, apps and offers with no search history anywhere)
+and 18 genuine messages, including ones that mention OTPs and deadlines:
 
 | | |
 |---|---|
-| **Scams called safe (marked VERIFIED)** | **0 of 24** |
-| Scams labelled SCAM | 24 of 24 (100%) |
-| Genuine messages wrongly called SCAM | 0 of 16 |
-| Genuine messages VERIFIED | 13 of 16 (81%). The other 3 came back UNVERIFIED, the cautious answer |
-| Overall accuracy | 92.5% |
-| Median time per check | 16 s |
+| **Scams called safe (marked VERIFIED)** | **0 of 32** |
+| **Zero-day scams caught** | **8 of 8** |
+| Scams labelled SCAM | 32 of 32 (100%) |
+| Genuine messages wrongly called SCAM | 0 of 18 |
+| Genuine messages VERIFIED | 14 of 18 (78%). The other 4 came back UNVERIFIED, the cautious answer |
+| Overall accuracy | 92% |
+| **Manipulation fingerprint alone** (no search at all) | Flags **32 of 32** scams; flags **0 of 18** genuine messages |
+| Median time per check | 17 s |
 
-Full report, confusion matrix and every miss: [eval/RESULTS.md](eval/RESULTS.md). The first run scored 87.5%. It also found a
-real bug: the OTP rule flagged *warnings* like "never share your OTP" as scams. The rule now only fires on actual
-requests for an OTP.
+Full report, confusion matrix and every miss: [eval/RESULTS.md](eval/RESULTS.md). The evaluation has caught real
+bugs along the way:
+- The OTP rule flagged *warnings* ("never share your OTP") as scams. It now only fires on actual requests.
+- The fingerprint initially rated genuine scheme announcements (authority + benefit) as suspicious. It now needs an
+  ask or pressure.
+- An English message about a Hindi-named scheme got a Hindi reply.
+
+Which genuine messages end up UNVERIFIED varies a little from run to run. They're borderline cases where the
+official page found doesn't state the exact claim.
 
 ## How it works
 
@@ -64,6 +90,10 @@ flowchart LR
     B -- no --> U
     V --> U[Nemotron 3.5 Lightning<br/>language + claims]
     A --> R[Rule engine<br/>links & scam patterns]
+    V --> F
+    A --> F[Nemotron 3 Super<br/>manipulation fingerprint]
+    R --> F
+    F --> J
     U --> P[Nemotron 3 Nano<br/>plan searches]
     P --> S1[Tavily: official<br/>gov.in / nic.in]
     P --> S2[Tavily: fact-checkers<br/>PIB, Alt News, BOOM…]
@@ -80,6 +110,7 @@ flowchart LR
 | Stage | Runs on | Why this model |
 |---|---|---|
 | Read screenshot | `Qwen/Qwen3.8-27B` (Token Factory) | No Nemotron model on Token Factory accepts images; Qwen only transcribes, it makes no decisions |
+| Manipulation fingerprint | `nvidia/nemotron-3-super-120b-a12b` | Runs alongside message understanding: 9 tactics, each scored 0–3 with a quote; rules corroborate, so there's no added latency |
 | Understand message | `nvidia/Nemotron-3_5-Lightning` | Fastest, and in our tests it read Tamil and Hindi correctly where Nano misread them |
 | Red flags | Deterministic Python | Instant and free, and a cleverly worded message can't talk it out of a finding |
 | Plan searches | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Short English queries are an easy task for the smallest model |
@@ -93,6 +124,7 @@ flowchart LR
 Wrongly calling a scam safe is the worst mistake this app can make, so the pipeline is biased towards caution:
 
 - **VERIFIED needs an official source.** If no `.gov.in` or official site supports the claim, the verdict is downgraded to UNVERIFIED.
+- **A strong manipulation playbook with no official backing means SCAM.** This is how brand-new scams with no search history are caught.
 - **Critical scam signals always mean SCAM.** These are fake government domains, look-alike links, raw-IP links, OTP or PIN requests and `.apk` installs. A real scheme used as bait is still a scam.
 - **Every claim is cited.** Each source shows its stance (supports or contradicts) and the exact quote it was judged on.
 - **No storage.** Messages aren't stored. Results are cached in memory only, keyed by a hash.

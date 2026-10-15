@@ -19,6 +19,18 @@ def test_informational_message_is_low():
     assert fp["level"] == "low" and fp["active"] == ["authority"]
 
 
+def test_genuine_scheme_announcement_is_low():
+    # "Ayushman Bharat gives Rs 5 lakh cover": authority + reward, but asks nothing and applies no pressure.
+    fp = fingerprint.build(model(authority=3, reward=3), [])
+    assert fp["level"] == "low"
+
+
+def test_misinformation_with_pressure_is_medium():
+    # "RBI: Rs 500 notes invalid next month, forward to everyone": no ask, but authority + pressure.
+    fp = fingerprint.build(model(authority=3, urgency=2, forward_pressure=2), [])
+    assert fp["level"] == "medium"
+
+
 def test_rules_set_a_floor_and_corroborate():
     flags = analyse("Enter your OTP at pmkisan.gov.in.verify-now.xyz to get Rs 6000 today")["flags"]
     fp = fingerprint.build(model(credential_request=2), flags)
