@@ -85,12 +85,15 @@ class Pipeline:
             # 4. Plan searches
             yield _event("plan", "running", model=M["plan"])
             allowed = sorted(config.OFFICIAL_DOMAINS)
-            plan = await self.llm.chat_json(
-                M["plan"],
-                prompts.PLAN.format(domains=", ".join(allowed)),
-                json.dumps([{k: c.get(k) for k in ("id", "claim_en", "entity", "keywords")} for c in claims]),
-                max_tokens=1200,
-            )
+            try:
+                plan = await self.llm.chat_json(
+                    M["plan"],
+                    prompts.PLAN.format(domains=", ".join(allowed)),
+                    json.dumps([{k: c.get(k) for k in ("id", "claim_en", "entity", "keywords")} for c in claims]),
+                    max_tokens=2000,
+                )
+            except (LLMError, ValueError):
+                plan = {}  # fall back to default queries built from each claim's entity below
             plans = {p.get("id"): p for p in plan.get("plans", [])}
             yield _event("plan", "done", model=M["plan"], plans=list(plans.values()))
 

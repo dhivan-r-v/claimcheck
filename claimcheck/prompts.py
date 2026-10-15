@@ -5,7 +5,9 @@ After the text, add one line starting with "VISUAL:" briefly describing logos, s
 
 UNDERSTAND = """You analyse forwarded WhatsApp/SMS messages from India for a fact-checking service.
 Messages are often code-mixed (Hinglish, Tanglish, Benglish written in Latin script) or in regional scripts.
-Understand the meaning, then return ONLY this JSON:
+Understand the meaning, then return ONLY this JSON.
+"reply_language" is the language the message is actually WRITTEN in. Indian scheme or place names inside
+English text (e.g. "Pradhan Mantri Ujjwala Yojana") do not make it Hindi: an English sentence gets an English reply.
 {
   "reply_language": "the language AND script the sender would want a reply in, e.g. 'Hinglish (Latin script)', 'Hindi (Devanagari)', 'Tamil (Tamil script)', 'English'",
   "is_code_mixed": true|false,
