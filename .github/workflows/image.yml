@@ -50,6 +50,10 @@ jobs:
       - name: Smoke test (PRs)
         if: github.event_name == 'pull_request'
         run: |
+          # Hosts like Render build WITHOUT a target, i.e. the final stage: it must be the web app.
+          docker build -q -t untargeted . >/dev/null
+          test "$(docker inspect -f '{{json .Config.Cmd}}' untargeted)" = "$(docker inspect -f '{{json .Config.Cmd}}' ${{ env.IMAGE }}:latest)" \
+            || { echo "Final Dockerfile stage is not the web app"; exit 1; }
           docker run -d --name app -p 8000:8000 ${{ env.IMAGE }}:latest
           for i in $(seq 1 20); do curl -fs localhost:8000/api/health && exit 0; sleep 1; done
           docker logs app; exit 1
