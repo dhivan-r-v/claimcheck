@@ -26,6 +26,7 @@ MODELS = {
     "understand": os.getenv("MODEL_UNDERSTAND", "nvidia/Nemotron-3_5-Lightning"),
     "plan": os.getenv("MODEL_PLAN", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"),
     "assess": os.getenv("MODEL_ASSESS", "nvidia/nemotron-3-super-120b-a12b"),
+    "fingerprint": os.getenv("MODEL_FINGERPRINT", "nvidia/nemotron-3-super-120b-a12b"),
     "verdict": os.getenv("MODEL_VERDICT", "nvidia/Nemotron-3-Ultra-550b-a55b"),
     "verdict_fallback": os.getenv("MODEL_VERDICT_FALLBACK", "nvidia/nemotron-3-super-120b-a12b"),
 }

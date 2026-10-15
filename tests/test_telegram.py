@@ -140,3 +140,14 @@ def test_format_result_defangs_text_but_not_source_links():
     out = telegram.format_result(ev)
     assert "hxxp://pw5[.]in" in out and "http://pw5.in" not in out
     assert 'href="https://pib.gov.in/a?x=1&amp;y=2"' in out
+
+
+def test_format_result_shows_fingerprint_with_defanged_evidence():
+    from claimcheck import fingerprint
+    fp = fingerprint.build({"tactics": {"credential_request": {"score": 3, "evidence": "send OTP to http://pw5.in"},
+                                        "authority": {"score": 3, "evidence": "Ministry of Digital Welfare"},
+                                        "reward": {"score": 2, "evidence": "Rs 6,250"}},
+                            "impersonates": "Ministry of Digital Welfare"}, [])
+    out = telegram.format_result({**RESULT, "fingerprint": fp})
+    assert "<b>Manipulation: HIGH" in out and "Pretends to be: Ministry of Digital Welfare" in out
+    assert "hxxp://pw5[.]in" in out and "Warning signs" not in out

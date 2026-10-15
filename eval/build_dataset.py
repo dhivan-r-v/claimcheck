@@ -80,6 +80,37 @@ ITEMS = [
     ("s24", S, "english", "pf_phishing",
      "EPFO update: you can now withdraw your full PF amount instantly. Just share your UAN number and the OTP you "
      "receive with our agent on 9012345678."),
+    # ---------------- zero-day scams ----------------
+    # Invented schemes, apps and offers that do not exist anywhere, so there is no search history,
+    # fact-check or news about them. Only the manipulation playbook can give them away.
+    ("z01", S, "english", "zero_day",
+     "Ministry of Digital Welfare: Under the new Bharat Digital Suraksha Bonus 2026, every smartphone user is "
+     "entitled to Rs 6,250. Verify your identity within 3 hours by sending your Aadhaar number and the OTP you "
+     "receive to our verification officer on WhatsApp 9812300456."),
+    ("z02", S, "hinglish", "zero_day",
+     "Namaste! Rashtriya Kisan Samriddhi Card 2026 launch ho gaya hai. Har kisan ko 18,000 seedha account mein. "
+     "Card activate karne ke liye 199 processing fee is UPI ID pe bhejo: ksamriddhi@ybl. Kal tak hi valid hai. "
+     "Kisi ko mat batana, limited seats."),
+    ("z03", S, "hindi", "zero_day",
+     "महिला शक्ति डिजिटल सम्मान योजना: सभी महिलाओं को ₹11,000 का डिजिटल सम्मान मिलेगा। अभी रजिस्टर करें, केवल "
+     "आज रात 12 बजे तक। अपना बैंक खाता नंबर और ATM पिन इस नंबर पर भेजें: 9001234567"),
+    ("z04", S, "tamil", "zero_day",
+     "தமிழ்நாடு டிஜிட்டல் இளைஞர் உதவித் திட்டம்: 18-30 வயதுடைய அனைவருக்கும் ₹15,000. இன்று இரவுக்குள் இந்த "
+     "செயலியை பதிவிறக்கம் செய்து பதிவு செய்யுங்கள்: TN-Youth-Help.apk. யாரிடமும் சொல்ல வேண்டாம்."),
+    ("z05", S, "english", "zero_day",
+     "This is Inspector Sharma from the Cyber Crime Cell. A SIM card registered on your Aadhaar was used for money "
+     "laundering. Do not disconnect this call or tell your family. Transfer your savings to the RBI safe-custody "
+     "account we provide to clear your name."),
+    ("z06", S, "tanglish", "zero_day",
+     "Ungalukku Jio 5G Loyalty Reward 4,999 kidaichirukku! 30 nimishathukkulla claim pannunga: jio-loyalty5g.shop. "
+     "Inga ungal debit card number matrum CVV podunga."),
+    ("z07", S, "english", "zero_day",
+     "Indian Railways Senior Citizen Travel Grant 2026: passengers above 55 get Rs 9,500 travel credit. Register at "
+     "irctc-seniorgrant.site and pay the Rs 350 verification charge. Offer closes in 6 hours. Share in 5 groups to "
+     "unlock a bonus."),
+    ("z08", S, "hinglish", "zero_day",
+     "Bhai, maine ek naya app join kiya - NiveshDouble. Isme 2000 invest karo, 7 din mein 6000 milta hai, government "
+     "approved hai. Mere referral link se join karo: niveshdouble.top/ref/4471. Aaj ka offer hai bas."),
     # ---------------- genuine ----------------
     ("g01", V, "english", "scheme",
      "PM-KISAN: The 21st instalment of Rs 2,000 has been released to eligible farmers. Check your beneficiary "
@@ -123,6 +154,13 @@ ITEMS = [
     ("g15", V, "english", "scheme",
      "The loan limit under Pradhan Mantri Mudra Yojana has been raised from Rs 10 lakh to Rs 20 lakh with the new "
      "Tarun Plus category."),
+    # Genuine messages that mention OTPs and deadlines: the fingerprint must not flag them.
+    ("g17", V, "english", "safety_advice",
+     "UIDAI: You can update your Aadhaar documents online on the myAadhaar portal (myaadhaar.uidai.gov.in). "
+     "Never share your Aadhaar OTP with anyone."),
+    ("g18", V, "english", "service",
+     "Indian voters can apply for a new voter ID card by filling Form 6 online on the Election Commission's portal "
+     "voters.eci.gov.in."),
     ("g16", V, "english", "scheme",
      "Atal Pension Yojana gives a guaranteed monthly pension of Rs 1,000 to Rs 5,000 after the age of 60, "
      "depending on your contribution."),
