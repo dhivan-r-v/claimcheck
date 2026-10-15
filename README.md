@@ -168,6 +168,18 @@ All settings are environment variables, set in `.env`:
 | `MODEL_VISION`, `MODEL_UNDERSTAND`, `MODEL_PLAN`, `MODEL_ASSESS`, `MODEL_VERDICT` | see `claimcheck/config.py` | Swap any stage's model |
 | `RATE_LIMIT_PER_HOUR` | `15` | Checks per client IP per hour (cached results are free) |
 
+## Telegram bot
+
+ClaimCheck also runs as a Telegram bot, served by the same app through a webhook:
+
+- **Private chat:** forward any message or send a screenshot. The bot edits one status message as each step
+  completes, then replies with the verdict in your language, the warning signs, sources and safety tips.
+- **Family groups:** reply `/check` to a suspicious forward. The bot ignores everything else in groups.
+
+To enable it, create a bot with [@BotFather](https://t.me/BotFather) and set `TELEGRAM_BOT_TOKEN`. On Render, the
+webhook secret is generated and the webhook registers itself at startup using `RENDER_EXTERNAL_URL`. Elsewhere, also set
+`PUBLIC_URL` and `TELEGRAM_WEBHOOK_SECRET`. The bot shares the web app's result cache and rate limit (per Telegram user).
+
 ## Deploy on Render (free)
 
 [`render.yaml`](render.yaml) is a Render Blueprint. In Render, choose **New → Blueprint**, select this repository,
@@ -221,7 +233,9 @@ claimcheck/
   prompts.py     prompts for each stage
   llm.py         async Token Factory client (JSON parsing, retry, thinking toggle)
   search.py      Tavily Search / Extract, official-domain logic
-  app.py         FastAPI: SSE streaming, caching, rate limiting
+  app.py         FastAPI: SSE streaming web API
+  telegram.py    Telegram bot (webhook): private chats and /check in groups
+  store.py       shared result cache and per-user rate limiter
   config.py      models, limits, official & fact-check domains
 static/          web UI (vanilla HTML/CSS/JS, mobile-first, dark mode)
 eval/            40-message labelled test set, evaluation runner, results
@@ -235,7 +249,7 @@ samples/         sample screenshot for testing
 - [x] Evaluation set of scam and genuine forwards, with accuracy and false-"safe" rate ([eval/RESULTS.md](eval/RESULTS.md))
 - [ ] Grow the evaluation set to 100+ real forwards, and cover advisories that make no single checkable claim
 - [ ] Deploy on Nebius Serverless Endpoints; run the evaluation as a Nebius Serverless Job
-- [ ] Telegram bot: forward a message, get a verdict
+- [x] Telegram bot: forward a message, get a verdict; `/check` in family groups
 - [ ] More languages for the red-flag rules (Bengali, Telugu, Marathi, Malayalam, Kannada)
 
 ## License
