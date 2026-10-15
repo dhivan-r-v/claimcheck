@@ -10,6 +10,10 @@ services:
     healthCheckPath: /api/health
     autoDeployTrigger: checksPass   # redeploy on main only after CI passes
     envVars:
+      # Pin the port so the app, the image's EXPOSE and Render's port scan all agree.
+      # (Render otherwise injects PORT=10000 while the image declares 8000.)
+      - key: PORT
+        value: "8000"
       - key: NEBIUS_API_KEY
         sync: false            # secret: entered in the Render dashboard, never in git
       - key: TAVILY_API_KEY
