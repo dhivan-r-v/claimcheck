@@ -12,6 +12,9 @@ screenshot, in any language, including Hinglish and Tanglish, and ClaimCheck:
 4. weighs each source against each claim with NVIDIA Nemotron,
 5. returns **SCAM / VERIFIED / UNVERIFIED** with citations, written **in the sender's own language**.
 
+**Live demo: https://claimcheck-1znl.onrender.com**. It's hosted on Render's free plan, so the first visit after a quiet
+spell can take up to a minute while it wakes up.
+
 > Built for the [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/), Best Apps and Agents track.
 
 ---
