@@ -138,7 +138,7 @@ function render(r) {
   (r.assessments || []).forEach((a) => (a.stances || []).forEach((s) => (stances[s.n] = s)));
   const cite = (ns) => (ns || []).filter((n) => byN[n]).map((n) => `<a href="${esc(byN[n].url)}" target="_blank" rel="noopener">[${n}]</a>`).join(" ");
 
-  const flags = r.red_flags.flags.map((f) => `<li class="flag ${f.severity}"><strong>${esc(f.label)}</strong><br><code>${esc(f.evidence)}</code></li>`).join("");
+  const flags = r.red_flags.flags.map((f) => `<li class="flag ${f.severity}"><strong>${esc(f.label)}</strong><br><code>${esc(defang(f.evidence))}</code></li>`).join("");
   const claims = (v.claims || []).map((c) => {
     const orig = r.claims.find((x) => x.id === c.id);
     return `<li class="claim"><span class="status ${esc(c.status)}">${esc(c.status)}</span>${esc(orig?.claim_en || "")}<div class="muted">${esc(c.note_en)} ${cite(c.sources)}</div></li>`;

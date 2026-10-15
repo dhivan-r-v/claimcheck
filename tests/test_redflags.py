@@ -84,3 +84,15 @@ def test_otp_warnings_are_not_flagged():
         "अपना ओटीपी कभी किसी को न बताएं।",
     ]:
         assert "asks_otp_pin" not in codes(msg), msg
+
+
+
+def test_article_key_merges_url_variants():
+    from claimcheck.search import article_key
+    t = "How Meta Ads Enable Loan Scam That Misuse Aurangabad Bank's Name"
+    assert article_key("https://www.boomlive.in/a/loan-scam", t) == article_key("https://boomlive.in/a/loan-scam/amp?utm=x", t + " ")
+    # Short titles fall back to the URL: different PIB releases differ only by query string.
+    assert (article_key("https://pib.gov.in/PressReleasePage.aspx?PRID=2191651", "PIB")
+            != article_key("https://pib.gov.in/PressReleasePage.aspx?PRID=2190074", "PIB"))
+    assert (article_key("https://pib.gov.in/PressReleasePage.aspx?PRID=1&utm_source=x", "PIB")
+            == article_key("https://www.pib.gov.in/PressReleasePage.aspx?PRID=1", "PIB"))
