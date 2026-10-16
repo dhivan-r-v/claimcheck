@@ -91,3 +91,17 @@ def test_internal_names_are_removed_but_citations_kept():
                          {"critical": False}, [], [])
     assert v["explanation_en"] == "A classic off-channel trick. See [1, 3]."
     assert v["reply_local"] == "Fake link [2]."
+
+
+
+def test_scam_without_evidence_is_downgraded():
+    fp = fingerprint.build(model(off_channel=2, reward=2, urgency=2), [])  # marketing-like
+    v = apply_guardrails({"verdict": "SCAM"}, {"critical": False}, [], [], fp)
+    assert v["verdict"] == "UNVERIFIED" and "no source contradicts" in v["guardrail_notes"][0]
+
+
+def test_scam_with_contradicting_source_is_kept():
+    fp = fingerprint.build(model(authority=2, forward_pressure=2), [])  # misinformation, asks nothing
+    assessments = [{"stances": [{"n": 1, "stance": "contradicts"}]}]
+    v = apply_guardrails({"verdict": "SCAM"}, {"critical": False}, assessments, [{"n": 1, "kind": "factcheck"}], fp)
+    assert v["verdict"] == "SCAM"
