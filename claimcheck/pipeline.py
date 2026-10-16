@@ -233,6 +233,7 @@ class Pipeline:
             "red_flags": flags["flags"],
             "manipulation_fingerprint": {
                 "level": fp["level"], "score": fp["score"], "impersonates": fp["impersonates"],
+                "takes_something_or_threatens": fp["forces_scam"],
                 "tactics": {k: {"score": t["score"], "evidence": t["evidence"]}
                             for k, t in fp["tactics"].items() if t["score"]},
                 "legit_signals": fp["legit_signals"],
@@ -275,6 +276,14 @@ def apply_guardrails(verdict: dict, flags: dict, assessments: list[dict], source
     elif v == "VERIFIED" and not official_support:
         notes.append("Changed from VERIFIED to UNVERIFIED: no official source confirmed the claim.")
         v = "UNVERIFIED"
+    elif v == "SCAM":
+        # Never accuse without evidence: a contradicting source, a critical signal, or a playbook
+        # that takes something from the reader (checked above) must back a SCAM label.
+        contradicted = any(st.get("stance") == "contradicts" for a in assessments for st in a.get("stances", []))
+        if not (contradicted or (fp and fp.get("forces_scam"))):
+            notes.append("Changed from SCAM to UNVERIFIED: no source contradicts it and it doesn't ask for "
+                         "credentials, money or an app install. Treat it with caution.")
+            v = "UNVERIFIED"
     for k in ("headline_en", "explanation_en", "reply_local"):
         if isinstance(verdict.get(k), str):
             verdict[k] = _INTERNAL_REFS.sub("", verdict[k]).replace("  ", " ").replace(" .", ".")

@@ -82,8 +82,11 @@ Decide the overall verdict:
   playbook (e.g. borrowed authority + reward/fear + a request for credentials, money or an unofficial channel) that no
   official source backs up. Brand-new scams have no search history: absence of evidence plus a scam playbook is a SCAM.
   A real scheme used as bait is still a SCAM.
-  Ordinary marketing from a real business (a link plus an offer, no request for credentials or money, no impersonation)
-  is not a SCAM: call it UNVERIFIED and explain the risks. Never accuse a real company of fraud without evidence.
+  SCAM needs evidence: a source that contradicts it, a critical red flag, or a fingerprint with
+  takes_something_or_threatens = true. Without one of these, the verdict is UNVERIFIED: explain the risks plainly
+  but do not call it a scam or say it impersonates anyone. Ordinary marketing from a real business (a link plus an
+  offer) is UNVERIFIED. Never accuse a real company of fraud without evidence, and cite only sources that are
+  actually about this message.
 - "VERIFIED": an OFFICIAL source explicitly confirms the core claim AND there are no scam signals.
 - "UNVERIFIED": anything else — not enough evidence either way. When in doubt choose UNVERIFIED, never VERIFIED.
   Wrongly calling a scam safe is the worst possible mistake.

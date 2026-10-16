@@ -65,10 +65,10 @@ and 18 genuine messages, including ones that mention OTPs and deadlines:
 |---|---|
 | **Scams called safe (marked VERIFIED)** | **0 of 32** |
 | **Zero-day scams caught** | **8 of 8** |
-| Scams labelled SCAM | 32 of 32 (100%) |
+| Scams labelled SCAM | 31 of 32. The other one came back UNVERIFIED (not safe), with no source contradicting it |
 | Genuine messages wrongly called SCAM | 0 of 18 |
-| Genuine messages VERIFIED | 13 of 18 (72%). The other 5 came back UNVERIFIED, the cautious answer |
-| Overall accuracy | 90% |
+| Genuine messages VERIFIED | 12 of 18 (67%). The other 6 came back UNVERIFIED, the cautious answer |
+| Overall accuracy | 86% |
 | **Manipulation fingerprint alone** (no search at all) | Flags **32 of 32** scams; flags **0 of 18** genuine messages |
 | Median time per check | 13 s |
 
@@ -109,6 +109,9 @@ Wrongly calling a scam safe is the worst mistake this app can make, so the pipel
 
 - **VERIFIED needs an official source.** If no `.gov.in` or official site supports the claim, the verdict is downgraded to UNVERIFIED.
 - **A strong manipulation playbook with no official backing means SCAM.** This is how brand-new scams with no search history are caught.
+- **SCAM needs evidence.** A SCAM label needs a contradicting source, a critical signal, or a playbook that asks for
+  credentials, money or an app (or threatens you). Otherwise the answer is UNVERIFIED. ClaimCheck never accuses a real
+  business without evidence.
 - **Critical scam signals always mean SCAM.** These are fake government domains, look-alike links, raw-IP links, OTP or PIN requests and `.apk` installs. A real scheme used as bait is still a scam.
 - **Every claim is cited.** Each source shows its stance (supports or contradicts) and the exact quote it was judged on.
 - **No storage.** Messages aren't stored. Results are cached in memory only, keyed by a hash.
