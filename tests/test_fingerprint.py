@@ -63,3 +63,31 @@ def test_guardrail_keeps_officially_supported_verified():
     assessments = [{"stances": [{"n": 1, "stance": "supports"}]}]
     v = apply_guardrails({"verdict": "VERIFIED"}, {"critical": False}, assessments, sources, fp)
     assert v["verdict"] == "VERIFIED"
+
+
+def test_marketing_link_and_offer_is_not_forced_to_scam():
+    # "Personal loan up to Rs 10 lakh, check eligibility in 2 minutes: http://pw5.in/..." from a real lender
+    fp = fingerprint.build(model(off_channel=2, reward=2, urgency=2), [])
+    assert fp["level"] == "high" and not fp["forces_scam"]
+    v = apply_guardrails({"verdict": "UNVERIFIED"}, {"critical": False}, [], [], fp)
+    assert v["verdict"] == "UNVERIFIED"
+
+
+def test_playbooks_that_take_something_still_force_scam():
+    for asks in ({"credential_request": 3}, {"payment_request": 2}, {"off_channel": 3}, {"secrecy": 2, "off_channel": 2}):
+        fp = fingerprint.build(model(authority=3, reward=2, **asks), [])
+        assert fp["forces_scam"], asks
+
+
+def test_null_impersonation_is_dropped():
+    for value in ("null", "None", "", None, 0):
+        assert fingerprint.build({"tactics": {}, "impersonates": value}, [])["impersonates"] is None
+    assert fingerprint.build({"tactics": {}, "impersonates": "TRAI"}, [])["impersonates"] == "TRAI"
+
+
+def test_internal_names_are_removed_but_citations_kept():
+    v = apply_guardrails({"verdict": "SCAM", "explanation_en": "A classic off-channel trick [red flags]. See [1, 3].",
+                          "reply_local": "Fake [red_flags, manipulation_fingerprint] link [2]."},
+                         {"critical": False}, [], [])
+    assert v["explanation_en"] == "A classic off-channel trick. See [1, 3]."
+    assert v["reply_local"] == "Fake link [2]."

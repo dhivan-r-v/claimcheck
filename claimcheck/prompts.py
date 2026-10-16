@@ -36,6 +36,7 @@ Hindi, Tamil, English or code-mixed (Hinglish, Tanglish); read them in their own
 Score each tactic 0-3 (0 = absent, 1 = mild, 2 = clear, 3 = extreme) ONLY if the message USES it on the reader.
 A message that WARNS the reader about a tactic (e.g. "never share your OTP") does not use it: score 0.
 - urgency: artificial deadline or time pressure ("within 2 hours", "aaj hi", "இன்றிரவுக்குள்")
+  (a speed claim like "approval in 2 minutes" or "instant loan" is a sales pitch, not urgency: score it under reward)
 - authority: claims to be or speak for government, a bank, police, a regulator or a big company, or borrows official scheme branding
 - fear: threatens loss, blocking, arrest, disconnection, penalties
 - reward: free money, prizes, unrealistic returns or benefits
@@ -81,6 +82,8 @@ Decide the overall verdict:
   playbook (e.g. borrowed authority + reward/fear + a request for credentials, money or an unofficial channel) that no
   official source backs up. Brand-new scams have no search history: absence of evidence plus a scam playbook is a SCAM.
   A real scheme used as bait is still a SCAM.
+  Ordinary marketing from a real business (a link plus an offer, no request for credentials or money, no impersonation)
+  is not a SCAM: call it UNVERIFIED and explain the risks. Never accuse a real company of fraud without evidence.
 - "VERIFIED": an OFFICIAL source explicitly confirms the core claim AND there are no scam signals.
 - "UNVERIFIED": anything else — not enough evidence either way. When in doubt choose UNVERIFIED, never VERIFIED.
   Wrongly calling a scam safe is the worst possible mistake.

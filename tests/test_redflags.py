@@ -96,3 +96,11 @@ def test_article_key_merges_url_variants():
             != article_key("https://pib.gov.in/PressReleasePage.aspx?PRID=2190074", "PIB"))
     assert (article_key("https://pib.gov.in/PressReleasePage.aspx?PRID=1&utm_source=x", "PIB")
             == article_key("https://www.pib.gov.in/PressReleasePage.aspx?PRID=1", "PIB"))
+
+
+
+def test_official_pages_with_generic_titles_are_not_merged():
+    from claimcheck.search import article_key
+    title = "Press Release: Press Information Bureau"
+    assert (article_key("https://pib.gov.in/PressReleasePage.aspx?PRID=2191651", title)
+            != article_key("https://pib.gov.in/PressReleasePage.aspx?PRID=2190074", title))
