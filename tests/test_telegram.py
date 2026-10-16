@@ -151,3 +151,27 @@ def test_format_result_shows_fingerprint_with_defanged_evidence():
     out = telegram.format_result({**RESULT, "fingerprint": fp})
     assert "<b>Manipulation: HIGH" in out and "Pretends to be: Ministry of Digital Welfare" in out
     assert "hxxp://pw5[.]in" in out and "Warning signs" not in out
+
+
+def test_group_check_with_quote_only(bot):
+    # Some clients send only the quoted part of the replied-to message.
+    pipe = FakePipeline()
+    run({"message_id": 5, "chat": {"id": -5, "type": "supergroup"}, "from": {"id": 8}, "text": "/check",
+         "quote": {"text": "Free laptop yojana, apply now", "position": 0}}, pipe)
+    assert pipe.calls == ["Free laptop yojana, apply now"]
+
+
+def test_group_check_with_external_reply_photo_caption(bot):
+    pipe = FakePipeline()
+    run({"message_id": 6, "chat": {"id": -5, "type": "group"}, "from": {"id": 8}, "text": "/check",
+         "external_reply": {"caption": "Rs 6250 bonus, send OTP"}}, pipe)
+    assert pipe.calls == ["Rs 6250 bonus, send OTP"]
+    assert bot[0][1]["reply_to_message_id"] == 6  # no id on external replies: answer the /check itself
+
+
+def test_handler_crash_is_reported_to_user(bot, monkeypatch):
+    async def boom(*a, **k):
+        raise RuntimeError("unexpected")
+    monkeypatch.setattr(telegram, "handle_message", boom)
+    asyncio.run(telegram._handle_safely(None, None, {"chat": {"id": 7, "type": "private"}, "message_id": 1}))
+    assert bot[-1][0] == "sendMessage" and "went wrong" in bot[-1][1]["text"]

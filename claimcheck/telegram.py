@@ -111,10 +111,20 @@ async def webhook(request: Request, x_telegram_bot_api_secret_token: str | None 
         return {"ok": True}
     _seen_updates.append(uid)
     if msg := update.get("message"):
-        task = asyncio.create_task(handle_message(request.app.state.http, request.app.state.pipeline, msg))
+        task = asyncio.create_task(_handle_safely(request.app.state.http, request.app.state.pipeline, msg))
         _tasks.add(task)
         task.add_done_callback(_tasks.discard)
     return {"ok": True}
+
+
+async def _handle_safely(client: httpx.AsyncClient, pipeline, msg: dict) -> None:
+    """A background task's exception is otherwise lost silently: log it and tell the user."""
+    try:
+        await handle_message(client, pipeline, msg)
+    except Exception:
+        log.exception("telegram handler crashed: chat=%s keys=%s", msg.get("chat", {}).get("type"), sorted(msg))
+        await _call(client, "sendMessage", chat_id=msg["chat"]["id"],
+                    text="Sorry, something went wrong while checking. Please try again.")
 
 
 def _command(text: str) -> str | None:
@@ -134,16 +144,26 @@ async def handle_message(client: httpx.AsyncClient, pipeline, msg: dict) -> None
         return
 
     if cmd == "/check":
-        target = msg.get("reply_to_message")
+        # Telegram can deliver the replied-to message as reply_to_message, as external_reply
+        # (another chat), or only as a quote of the selected part.
+        target = msg.get("reply_to_message") or msg.get("external_reply")
+        quote = (msg.get("quote") or {}).get("text") or ""
         rest = own_text.split(maxsplit=1)[1] if len(own_text.split(maxsplit=1)) > 1 else ""
-        if target is None and rest:
+        if target is not None:
+            body = target.get("text") or target.get("caption") or quote
+        elif quote:
+            target, body = msg, quote
+        elif rest:
             target, body = msg, rest  # "/check <text>"
-        elif target is None:
+        else:
+            # Structure only (never content), to diagnose clients that send replies differently.
+            log.warning("telegram /check without a reply: chat=%s keys=%s",
+                        msg["chat"].get("type"), sorted(msg))
             await _call(client, "sendMessage", chat_id=chat_id, parse_mode="HTML",
                         text="Reply <code>/check</code> to the message you want me to check.")
             return
-        else:
-            body = target.get("text") or target.get("caption") or ""
+        if "message_id" not in target:
+            target = {**target, "message_id": msg["message_id"]}
     elif private:
         target, body = msg, own_text
     else:
