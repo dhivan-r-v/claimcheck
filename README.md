@@ -189,7 +189,9 @@ ClaimCheck also runs as a Telegram bot, served by the same app through a webhook
   completes, then replies with the verdict in your language, the warning signs, sources and safety tips.
 - **Family groups:** reply `/check` to a suspicious forward. The bot ignores everything else in groups.
 
-To enable it, create a bot with [@BotFather](https://t.me/BotFather) and set `TELEGRAM_BOT_TOKEN`. On Render, the
+To enable it, create a bot with [@BotFather](https://t.me/BotFather) and set `TELEGRAM_BOT_TOKEN`. For `/check` in groups,
+also send `/setprivacy` → **Disable** to BotFather, then re-add the bot to the group. In privacy mode Telegram hides the
+replied-to message from bots. The bot still ignores every group message except `/check`, and stores nothing. On Render, the
 webhook secret is generated and the webhook registers itself at startup using `RENDER_EXTERNAL_URL`. Elsewhere, also set
 `PUBLIC_URL` and `TELEGRAM_WEBHOOK_SECRET`. The bot shares the web app's result cache and rate limit (per Telegram user).
 

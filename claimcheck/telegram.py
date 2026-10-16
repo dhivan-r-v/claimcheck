@@ -242,6 +242,9 @@ async def _download_photo(client: httpx.AsyncClient, msg: dict) -> bytes | None:
     return r.content
 
 
+_PHONE = re.compile(r"(?<![\w/=.])((?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}|\+\d{1,3}[\s-]?\d{2,4}(?:[\s-]?\d{3,4}){2})(?![\w/])")
+
+
 def defang(text: str) -> str:
     """Make non-official links untappable (hxxp://pw5[.]in). Telegram auto-links any URL in a
     message, and a scam warning must never hand the reader a working scam link."""
@@ -258,7 +261,8 @@ def format_result(ev: dict) -> str:
     v = ev["verdict"]
 
     def e(s: str) -> str:
-        return html.escape(defang(s))
+        # Code-format phone numbers: Telegram makes plain ones tappable, i.e. one tap to call the scammer.
+        return _PHONE.sub(r"<code>\1</code>", html.escape(defang(s)))
     lines = [BADGE.get(v.get("verdict"), BADGE["UNVERIFIED"]), f"<b>{e(v.get('headline_en') or '')}</b>", ""]
     # Clip before escaping so the 4096-char limit is never hit mid-tag.
     local, english = (v.get("reply_local") or "")[:1500], (v.get("explanation_en") or "")[:1200]
