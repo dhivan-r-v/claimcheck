@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1060" width="1200" height="1060" font-family="'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif">
+  <title>ClaimCheck architecture</title>
+  <desc>A forwarded message or screenshot is checked by two independent layers, manipulation and evidence, then a reasoned Nemotron 3 Ultra verdict passes deterministic guardrails.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7a8591"/>
+    </marker>
+    <style>
+      .t { font-size: 15px; font-weight: 700; fill: #16191d; }
+      .s { font-size: 12.5px; fill: #5d6670; }
+      .box { fill: #ffffff; stroke: #d5dae0; stroke-width: 1.2; }
+      .line { fill: none; stroke: #7a8591; stroke-width: 1.6; }
+      .lane-h { font-size: 13px; font-weight: 800; letter-spacing: 1.5px; }
+      .lane-q { font-size: 14px; fill: #3d4650; font-style: italic; }
+      .legend { font-size: 12.5px; fill: #3d4650; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="1060" rx="18" fill="#ffffff"/>
+
+  <!-- Title + legend -->
+  <text x="40" y="50" font-size="26" font-weight="800" fill="#16191d">ClaimCheck: how a forward gets checked</text>
+  <text x="40" y="76" font-size="14.5" fill="#5d6670">All model calls run on Nebius Token Factory</text>
+  <rect x="820" y="36" width="12" height="12" rx="2" fill="#76b900"/><text x="840" y="47" class="legend">NVIDIA Nemotron</text>
+  <rect x="990" y="36" width="12" height="12" rx="2" fill="#6b4bd8"/><text x="1010" y="47" class="legend">Tavily</text>
+  <rect x="820" y="60" width="12" height="12" rx="2" fill="#e07b00"/><text x="840" y="71" class="legend">Vision model</text>
+  <rect x="990" y="60" width="12" height="12" rx="2" fill="#7a8591"/><text x="1010" y="71" class="legend">Deterministic code</text>
+
+  <!-- Input -->
+  <rect x="400" y="98" width="400" height="58" rx="10" class="box"/>
+  <rect x="400" y="98" width="6" height="58" rx="3" fill="#7a8591"/>
+  <text x="420" y="122" class="t">Forwarded message or screenshot</text>
+  <text x="420" y="142" class="s">Web app  ·  Telegram bot @ClaimCheckIndiaBot</text>
+  <path d="M600 156 V176" class="line" marker-end="url(#arrow)"/>
+
+  <!-- OCR -->
+  <rect x="400" y="178" width="400" height="58" rx="10" class="box"/>
+  <rect x="400" y="178" width="6" height="58" rx="3" fill="#e07b00"/>
+  <text x="420" y="202" class="t">Qwen3.8-27B · reads screenshots</text>
+  <text x="420" y="222" class="s">Images only (no Nemotron model accepts images)</text>
+
+  <!-- Split into lanes -->
+  <path d="M600 236 V250 H300 V262" class="line" marker-end="url(#arrow)"/>
+  <path d="M600 250 H900 V262" class="line" marker-end="url(#arrow)"/>
+
+  <!-- Left lane: manipulation -->
+  <rect x="40" y="264" width="520" height="400" rx="14" fill="#fdf3f3" stroke="#eab4b4" stroke-width="1.2"/>
+  <text x="62" y="292" class="lane-h" fill="#c62828">MANIPULATION LAYER</text>
+  <text x="62" y="312" class="lane-q">How is it trying to make me act?</text>
+
+  <rect x="70" y="330" width="460" height="62" rx="10" class="box"/>
+  <rect x="70" y="330" width="6" height="62" rx="3" fill="#7a8591"/>
+  <text x="90" y="355" class="t">Rule engine · no model, instant</text>
+  <text x="90" y="376" class="s">Fake .gov.in links, look-alikes, OTP asks, .apk, urgency</text>
+  <path d="M300 392 V416" class="line" marker-end="url(#arrow)"/>
+  <text x="310" y="409" class="s" font-style="italic">corroborates</text>
+
+  <rect x="70" y="418" width="460" height="62" rx="10" class="box"/>
+  <rect x="70" y="418" width="6" height="62" rx="3" fill="#76b900"/>
+  <text x="90" y="443" class="t">Nemotron 3 Super · manipulation fingerprint</text>
+  <text x="90" y="464" class="s">9 tactics scored 0–3, each backed by a quote</text>
+  <path d="M300 480 V504" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="70" y="506" width="460" height="62" rx="10" fill="#fdecec" stroke="#c62828" stroke-width="1.4"/>
+  <text x="90" y="531" class="t">Fingerprint: low · medium · high</text>
+  <text x="90" y="552" class="s">Catches zero-day scams with no search history</text>
+
+  <text x="300" y="604" text-anchor="middle" font-size="13.5" font-weight="700" fill="#c62828">8 / 8 invented scams caught</text>
+  <text x="300" y="626" text-anchor="middle" font-size="13" fill="#5d6670">0 / 18 genuine messages flagged</text>
+
+  <!-- Right lane: evidence -->
+  <rect x="640" y="264" width="520" height="400" rx="14" fill="#f1f5fd" stroke="#adc2ee" stroke-width="1.2"/>
+  <text x="662" y="292" class="lane-h" fill="#2357d9">EVIDENCE LAYER</text>
+  <text x="662" y="312" class="lane-q">Are the claims true?</text>
+
+  <rect x="670" y="326" width="460" height="54" rx="10" class="box"/>
+  <rect x="670" y="326" width="6" height="54" rx="3" fill="#76b900"/>
+  <text x="690" y="348" class="t">Nemotron 3.5 Lightning · language + claims</text>
+  <text x="690" y="368" class="s">Hinglish, Tanglish, Hindi, Tamil, English</text>
+  <path d="M900 380 V390" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="670" y="392" width="460" height="54" rx="10" class="box"/>
+  <rect x="670" y="392" width="6" height="54" rx="3" fill="#76b900"/>
+  <text x="690" y="414" class="t">Nemotron 3 Nano · plans the searches</text>
+  <text x="690" y="434" class="s">Official, fact-check and news query per claim</text>
+  <path d="M900 446 V452 H743 V456" class="line" marker-end="url(#arrow)"/>
+  <path d="M900 452 V456" class="line" marker-end="url(#arrow)"/>
+  <path d="M900 452 H1057 V456" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="670" y="458" width="146" height="54" rx="10" class="box"/>
+  <rect x="670" y="458" width="6" height="54" rx="3" fill="#6b4bd8"/>
+  <text x="686" y="480" class="t" font-size="14">Tavily Search</text>
+  <text x="686" y="499" class="s">gov.in · nic.in</text>
+  <rect x="827" y="458" width="146" height="54" rx="10" class="box"/>
+  <rect x="827" y="458" width="6" height="54" rx="3" fill="#6b4bd8"/>
+  <text x="843" y="480" class="t" font-size="14">Tavily Search</text>
+  <text x="843" y="499" class="s">fact-checkers</text>
+  <rect x="984" y="458" width="146" height="54" rx="10" class="box"/>
+  <rect x="984" y="458" width="6" height="54" rx="3" fill="#6b4bd8"/>
+  <text x="1000" y="480" class="t" font-size="14">Tavily Search</text>
+  <text x="1000" y="499" class="s">recent news</text>
+  <path d="M743 512 V518 H1057 V512" class="line"/>
+  <path d="M900 518 V528" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="670" y="530" width="460" height="54" rx="10" class="box"/>
+  <rect x="670" y="530" width="6" height="54" rx="3" fill="#6b4bd8"/>
+  <text x="690" y="552" class="t">Tavily Extract · reads official pages in full</text>
+  <text x="690" y="572" class="s">Including official links found in the message</text>
+  <path d="M900 584 V594" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="670" y="596" width="460" height="54" rx="10" class="box"/>
+  <rect x="670" y="596" width="6" height="54" rx="3" fill="#76b900"/>
+  <text x="690" y="618" class="t">Nemotron 3 Super · stance per source</text>
+  <text x="690" y="638" class="s">Supports / contradicts / neutral, with the exact quote</text>
+
+  <!-- Converge -->
+  <path d="M300 664 V682 H480 V700" class="line" marker-end="url(#arrow)"/>
+  <path d="M900 664 V682 H720 V700" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="340" y="702" width="520" height="62" rx="10" class="box" stroke="#76b900" stroke-width="1.6"/>
+  <rect x="340" y="702" width="6" height="62" rx="3" fill="#76b900"/>
+  <text x="360" y="727" class="t">Nemotron 3 Ultra · reasoned verdict</text>
+  <text x="360" y="748" class="s">Thinking on · reply written in the sender's own language</text>
+  <path d="M600 764 V786" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="340" y="788" width="520" height="76" rx="10" class="box"/>
+  <rect x="340" y="788" width="6" height="76" rx="3" fill="#7a8591"/>
+  <text x="360" y="813" class="t">Guardrails · rules the model cannot override</text>
+  <text x="360" y="834" class="s">VERIFIED needs an official source that supports the claim</text>
+  <text x="360" y="852" class="s">Critical signal or strong scam playbook → SCAM</text>
+  <path d="M600 864 V886" class="line" marker-end="url(#arrow)"/>
+
+  <!-- Outputs -->
+  <rect x="330" y="888" width="160" height="42" rx="21" fill="#c62828"/>
+  <text x="410" y="915" text-anchor="middle" font-size="15" font-weight="800" fill="#ffffff" letter-spacing="1">SCAM</text>
+  <rect x="520" y="888" width="160" height="42" rx="21" fill="#1e7d3c"/>
+  <text x="600" y="915" text-anchor="middle" font-size="15" font-weight="800" fill="#ffffff" letter-spacing="1">VERIFIED</text>
+  <rect x="710" y="888" width="160" height="42" rx="21" fill="#9a6200"/>
+  <text x="790" y="915" text-anchor="middle" font-size="15" font-weight="800" fill="#ffffff" letter-spacing="1">UNVERIFIED</text>
+  <text x="600" y="956" text-anchor="middle" font-size="13.5" fill="#3d4650">Cited sources · warning signs · safety tips · one-tap share back to WhatsApp</text>
+
+  <!-- Footer -->
+  <rect x="40" y="984" width="1120" height="44" rx="10" fill="#f3f5f7"/>
+  <text x="600" y="1011" text-anchor="middle" font-size="13" fill="#3d4650">Inference: Nebius Token Factory  ·  Search: Tavily  ·  Web: Render  ·  Bot: Telegram webhook  ·  Eval: 50-message test set (Nebius Job image)  ·  CI/CD: GitHub Actions</text>
+</svg>
