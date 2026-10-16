@@ -15,6 +15,7 @@ Stages
 import asyncio
 import base64
 import json
+import re
 import time
 from collections.abc import AsyncIterator
 
@@ -247,6 +248,10 @@ class Pipeline:
                                             max_tokens=6000, timeout=120), M["verdict_fallback"]
 
 
+# e.g. "[red flags]", "[red_flags, manipulation_fingerprint]": internal names, never for users.
+_INTERNAL_REFS = re.compile(r"\s*\[(?:[^\]\d]*?(?:red[ _]flags?|fingerprint|assessments?|guardrails?)[^\]\d]*?)\]", re.I)
+
+
 def apply_guardrails(verdict: dict, flags: dict, assessments: list[dict], sources: list[dict],
                      fp: dict | None = None) -> dict:
     """Hard rules the model cannot override."""
@@ -262,7 +267,7 @@ def apply_guardrails(verdict: dict, flags: dict, assessments: list[dict], source
     if flags["critical"] and v != "SCAM":
         notes.append(f"Changed from {v} to SCAM: the message contains critical scam signals.")
         v = "SCAM"
-    elif fp and fp["level"] == "high" and v != "SCAM" and not official_support:
+    elif fp and fp.get("forces_scam") and v != "SCAM" and not official_support:
         tactics = ", ".join(fp["tactics"][k]["label"].lower() for k in fp["active"][:3])
         notes.append(f"Changed from {v} to SCAM: strong manipulation pattern ({tactics}) "
                      "and no official source backs the message.")
@@ -270,4 +275,7 @@ def apply_guardrails(verdict: dict, flags: dict, assessments: list[dict], source
     elif v == "VERIFIED" and not official_support:
         notes.append("Changed from VERIFIED to UNVERIFIED: no official source confirmed the claim.")
         v = "UNVERIFIED"
+    for k in ("headline_en", "explanation_en", "reply_local"):
+        if isinstance(verdict.get(k), str):
+            verdict[k] = _INTERNAL_REFS.sub("", verdict[k]).replace("  ", " ").replace(" .", ".")
     return {**verdict, "verdict": v, "guardrail_notes": notes}

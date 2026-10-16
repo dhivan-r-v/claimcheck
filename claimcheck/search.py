@@ -78,7 +78,9 @@ def is_junk(text: str | None) -> bool:
 def article_key(url: str, title: str) -> str:
     """Identify one article across URL variants (AMP, tracking params, trailing slashes, mirrors)."""
     norm_title = re.sub(r"\W+", " ", (title or "").lower()).strip()
-    if len(norm_title) >= 20:
+    # Merge by title only on news / fact-check sites. Government pages reuse generic titles
+    # ("Press Information Bureau"), so different official releases must never be merged.
+    if len(norm_title) >= 20 and not is_official(domain(url)):
         return f"{domain(url)}|{norm_title}"
     u = urlparse(url)
     # Keep the query (PIB releases differ only by ?PRID=...) but drop tracking parameters.

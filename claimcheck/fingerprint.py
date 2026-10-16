@@ -77,12 +77,25 @@ def build(model_out: dict | None, flags: list[dict]) -> dict:
         level = "low"
 
     active = sorted((k for k, t in tactics.items() if t["score"]), key=lambda k: -tactics[k]["score"] * TACTICS[k][1])
+    t = {k: v["score"] for k, v in tactics.items()}
+    # A link + an offer is also what ordinary marketing looks like. Only a playbook that takes
+    # something from the victim (credentials, money, an .apk / fake-official link) or threatens
+    # or isolates them is strong enough to call a scam without the model's judgement.
+    forces_scam = level == "high" and (
+        t["credential_request"] >= 2 or t["payment_request"] >= 2 or t["off_channel"] >= 3
+        or t["fear"] >= 2 or t["secrecy"] >= 2
+    )
+    impersonates = (model_out or {}).get("impersonates")
+    if not isinstance(impersonates, str) or impersonates.strip().lower() in {"", "null", "none", "n/a", "unknown"}:
+        impersonates = None
+
     return {
         "level": level,
+        "forces_scam": forces_scam,
         "score": min(100, round(raw / MAX_RAW * 100)),
         "tactics": tactics,
         "active": active,
-        "impersonates": (model_out or {}).get("impersonates"),
+        "impersonates": impersonates,
         "legit_signals": (model_out or {}).get("legit_signals") or [],
         "summary_en": (model_out or {}).get("summary_en") or "",
     }

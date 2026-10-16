@@ -67,10 +67,10 @@ and 18 genuine messages, including ones that mention OTPs and deadlines:
 | **Zero-day scams caught** | **8 of 8** |
 | Scams labelled SCAM | 32 of 32 (100%) |
 | Genuine messages wrongly called SCAM | 0 of 18 |
-| Genuine messages VERIFIED | 14 of 18 (78%). The other 4 came back UNVERIFIED, the cautious answer |
-| Overall accuracy | 92% |
+| Genuine messages VERIFIED | 13 of 18 (72%). The other 5 came back UNVERIFIED, the cautious answer |
+| Overall accuracy | 90% |
 | **Manipulation fingerprint alone** (no search at all) | Flags **32 of 32** scams; flags **0 of 18** genuine messages |
-| Median time per check | 17 s |
+| Median time per check | 13 s |
 
 Full report, confusion matrix and every miss: [eval/RESULTS.md](eval/RESULTS.md). The evaluation has caught real
 bugs along the way:
@@ -78,6 +78,9 @@ bugs along the way:
 - The fingerprint initially rated genuine scheme announcements (authority + benefit) as suspicious. It now needs an
   ask or pressure.
 - An English message about a Hindi-named scheme got a Hindi reply.
+- A real lender's marketing SMS (a link plus an offer) was called a scam. Now only playbooks that ask for
+  credentials or money, push an `.apk` or fake official link, or threaten or isolate you are forced to SCAM; plain
+  marketing is UNVERIFIED with the risks explained.
 
 Which genuine messages end up UNVERIFIED varies a little from run to run. They're borderline cases where the
 official page found doesn't state the exact claim.
