@@ -13,8 +13,9 @@ screenshot, in any language, including Hinglish and Tanglish, and ClaimCheck:
 5. weighs each source against each claim with NVIDIA Nemotron,
 6. returns **SCAM / VERIFIED / UNVERIFIED** with citations, written **in the sender's own language**.
 
-**Live demo: https://claimcheck-1znl.onrender.com**. It's hosted on Render's free plan, so the first visit after a quiet
-spell can take up to a minute while it wakes up.
+**Live demo: https://claimcheck-1znl.onrender.com**  ·  **Telegram: [@ClaimCheckIndiaBot](https://t.me/ClaimCheckIndiaBot)**
+(forward any message, or reply `/check` in a family group). The demo is on Render's free plan, so the first visit after a
+quiet spell can take up to a minute while it wakes up.
 
 > Built for the [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/), Best Apps and Agents track.
 
@@ -83,29 +84,9 @@ official page found doesn't state the exact claim.
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A[Message text<br/>or screenshot] --> B{Image?}
-    B -- yes --> V[Qwen3.8-27B<br/>transcribe screenshot]
-    B -- no --> U
-    V --> U[Nemotron 3.5 Lightning<br/>language + claims]
-    A --> R[Rule engine<br/>links & scam patterns]
-    V --> F
-    A --> F[Nemotron 3 Super<br/>manipulation fingerprint]
-    R --> F
-    F --> J
-    U --> P[Nemotron 3 Nano<br/>plan searches]
-    P --> S1[Tavily: official<br/>gov.in / nic.in]
-    P --> S2[Tavily: fact-checkers<br/>PIB, Alt News, BOOM…]
-    P --> S3[Tavily: recent news]
-    S1 --> X[Tavily Extract<br/>read official page]
-    X --> W[Nemotron 3 Super<br/>stance per source]
-    S2 --> W
-    S3 --> W
-    W --> J[Nemotron 3 Ultra<br/>reasoned verdict]
-    R --> J
-    J --> G[Guardrails] --> O[SCAM / VERIFIED / UNVERIFIED<br/>+ citations, in user's language]
-```
+![ClaimCheck architecture: a manipulation layer and an evidence layer feed a Nemotron 3 Ultra verdict, which passes deterministic guardrails](docs/architecture.svg)
+
+High-resolution PNG for slides: [docs/architecture.png](docs/architecture.png)
 
 | Stage | Runs on | Why this model |
 |---|---|---|
