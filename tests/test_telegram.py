@@ -175,3 +175,12 @@ def test_handler_crash_is_reported_to_user(bot, monkeypatch):
     monkeypatch.setattr(telegram, "handle_message", boom)
     asyncio.run(telegram._handle_safely(None, None, {"chat": {"id": 7, "type": "private"}, "message_id": 1}))
     assert bot[-1][0] == "sendMessage" and "went wrong" in bot[-1][1]["text"]
+
+
+def test_phone_numbers_are_not_tappable():
+    ev = {**RESULT, "verdict": {**RESULT["verdict"],
+          "reply_local": "Don't call 9876543210 or +92 300 1234567. Real amount is Rs 6,000 [1]."}}
+    out = telegram.format_result(ev)
+    assert "<code>9876543210</code>" in out and "<code>+92 300 1234567</code>" in out
+    assert "<code>6,000</code>" not in out and "<code>1</code>" not in out
+    assert 'href="https://pib.gov.in/a?x=1&amp;y=2"' in out  # links untouched
