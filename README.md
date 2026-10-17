@@ -13,6 +13,8 @@ screenshot, in any language, including Hinglish and Tanglish, and ClaimCheck:
 5. weighs each source against each claim with NVIDIA Nemotron,
 6. returns **SCAM / VERIFIED / UNVERIFIED** with citations, written **in the sender's own language**.
 
+**▶ Demo video (2:58): https://youtu.be/ef64LAtjHAE**
+
 **Live demo: https://claimcheck-1znl.onrender.com**  ·  **Telegram: [@ClaimCheckIndiaBot](https://t.me/ClaimCheckIndiaBot)**
 (forward any message, or reply `/check` in a family group). The demo is on Render's free plan, so the first visit after a
 quiet spell can take up to a minute while it wakes up.
